@@ -1,3 +1,4 @@
+
 #!/usr/bin/ruby
 
 =begin
@@ -29,6 +30,20 @@ END {
 	puts "Terminating Ruby Program"
 }
 
+
+module Week
+   FIRST_DAY = "Sunday"
+   def Week.weeks_in_month
+      puts "You have four weeks in a month"
+   end
+   def Week.weeks_in_year
+      puts "You have 52 weeks in a year"
+   end
+end
+
+
+
+
 class HelloWorld
 	def initialize(name)
 		@name = name.capitalize
@@ -44,6 +59,17 @@ class Sample1
 	end
 end
 
+
+
+class Decade
+include Week
+   no_of_yrs=10
+   def no_of_months
+      puts Week::FIRST_DAY
+      number=10*12
+      puts number
+   end
+end
 
 class Customer
 	def initialize(id, name, addr)
@@ -155,21 +181,21 @@ prime(51)
 prime(97)
 
 
-
+=begin
 # Testing input methods
 puts "-----------------------------------"
 puts " Testing input and hash methods "
 print "Line is ", __LINE__, "\n";
 
 puts "Text please: "
-text = gets.chomp
+text = gets
 words = text.split(" ")
 frequencies = Hash.new(0)
 words.each { |word| frequencies[word] += 1 }
 frequencies = frequencies.sort_by {|a, b| b }
 frequencies.reverse!
 frequencies.each { |word, frequency| puts word + " " + frequency.to_s }
-
+=end
 
 puts "\nChecking  a small loop (while)"
 puts "-----------------------------------"
@@ -181,6 +207,25 @@ while $i < $num  do
    puts("Inside the loop i = #$i" )
    $i +=1
 end
+
+
+for i in 0..5
+   if i > 2 then
+      break
+   end
+   puts "Value of local variable is #{i}"
+end
+
+
+for i in 0..5
+   if i < 2 then
+      next
+   end
+   puts "Value of local variable is #{i}"
+end
+
+
+
 
 puts "Testing methods"
 puts "-----------------------------------"
@@ -231,75 +276,12 @@ puts time.usec    # => 999999: microseconds
 puts time.zone    # => "UTC": timezone name
 
 
-=begin
-Output MUSY be this :
-Initializing Ruby Program
-Current Time : 2016-09-16 00:17:29 +0000
-Main ruby program begins now.
------------------------------------
-Check the Hello World class
-Hello World!
------------------------------------
-Simple arithmethic operations
- x = 10
- y = 25
- x + y = 35
- x - y = -15
- x * y = 250
- x / y = 0
- x % y = 10
- x ** y = 10000000000000000000000000
-Checking  a small loop (while)
------------------------------------
-Inside the loop i = 0
-Inside the loop i = 1
-Inside the loop i = 2
-Inside the loop i = 3
-Inside the loop i = 4
-Testing methods
------------------------------------
-The programming language is C
-The programming language is C++
-The programming language is Ruby
-The programming language is Perl
-Testing value return
------------------------------------
-100
-200
-300
-Testing variable argument return and check
------------------------------------
-The number of parameters is 3
-The parameters are Zara
-The parameters are 6
-The parameters are F
-The number of parameters is 4
-The parameters are Mac
-The parameters are 36
-The parameters are M
-The parameters are MCA
-Testing string unpack operations
------------------------------------
-[" abc", ""]
-[" ab", "c \x00"]
-[" abc ", "abc "]
-["00000100", "01100001"]
-["02", "61", 97]
-[-480, 65279]
-[" now is"]
-["w", "l", "o", "o", "h"]
-Testing time
------------------------------------
-Current Time : 2016-09-16 00:17:29 +0000
-2016
-9
-16
-5
-260
-0
-17
-29
-974223
-UTC
-Terminating Ruby Program
-=end
+
+
+
+
+d1=Decade.new
+puts Week::FIRST_DAY
+Week.weeks_in_month
+Week.weeks_in_year
+d1.no_of_months
