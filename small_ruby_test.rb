@@ -181,21 +181,21 @@ prime(51)
 prime(97)
 
 
-=begin
+
 # Testing input methods
 puts "-----------------------------------"
 puts " Testing input and hash methods "
 print "Line is ", __LINE__, "\n";
 
 puts "Text please: "
-text = gets
+text = gets.chomp
 words = text.split(" ")
 frequencies = Hash.new(0)
 words.each { |word| frequencies[word] += 1 }
 frequencies = frequencies.sort_by {|a, b| b }
 frequencies.reverse!
 frequencies.each { |word, frequency| puts word + " " + frequency.to_s }
-=end
+
 
 puts "\nChecking  a small loop (while)"
 puts "-----------------------------------"
@@ -274,9 +274,6 @@ puts time.min     # => 59
 puts time.sec     # => 59
 puts time.usec    # => 999999: microseconds
 puts time.zone    # => "UTC": timezone name
-
-
-
 
 
 
