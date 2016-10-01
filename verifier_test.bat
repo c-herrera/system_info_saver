@@ -11,7 +11,7 @@ SET log=Log-%me%.%DATE:~10,4%_%DATE:~4,2%_%DATE:~7,2%%TIME:~0,2%_%TIME:~3,2%_%TI
 :menu1
 @cls
 @echo Driver verifier options :
-@echo.
+@echo --------------------------------------------------------------------
 @echo   1. Verifier Help (saves a copy for better reading)
 @echo   2. Verifier set Standard options
 @echo   3. Verifier enable all
@@ -23,7 +23,7 @@ SET log=Log-%me%.%DATE:~10,4%_%DATE:~4,2%_%DATE:~7,2%%TIME:~0,2%_%TIME:~3,2%_%TI
 @echo   9. Verifier live dump
 @echo  10. Verifier one check
 @echo  11. Quit
-set /p input=Select an option- 
+set /p input=Type an option- 
 
 
 if '%input%' == '1' goto verifier_help
@@ -54,6 +54,7 @@ goto menu1
 :verifier_standard
 @cls
 @echo Specifies standard Driver Verifier flags. This is equivalent to '/flags 0x209BB'.
+@echo --------------------------------------------------------------------
 verifier /standard
 timeout 1
 goto menu1
@@ -62,6 +63,7 @@ goto menu1
 :verifier_all
 @cls
 @echo Specifies that all installed drivers will be verified after the next boot.
+@echo --------------------------------------------------------------------
 verifier /all
 timeout 1
 goto menu1
@@ -70,6 +72,7 @@ goto menu1
 :verifier_query
 @cls
 @echo Display runtime Driver Verifier statistics and settings.
+@echo --------------------------------------------------------------------
 verifier /query >>  %log%
 timeout 2
 goto menu1
@@ -80,6 +83,7 @@ goto menu1
 @echo enabled, or options and drivers that will be verified after the
 @echo next boot. The display does not include drivers and options added
 @echo using /volatile.
+@echo --------------------------------------------------------------------
 verifier /querysettings >> %log%
 timeout 2
 goto menu1
@@ -88,6 +92,7 @@ goto menu1
 @cls
 @echo Clears Driver Verifier flags and driver settings. This option requires
 @echo system reboot to take effect.
+@echo --------------------------------------------------------------------
 verifier /reset
 timeout 3
 goto menu1
@@ -97,6 +102,7 @@ goto menu1
 @echo Changes Driver Verifier settings without rebooting the computer.
 @echo Volatile settings take effect immediately and are in effect until the
 @echo next system reboot.
+@echo --------------------------------------------------------------------
 verifier /volatile
 timeout 2
 goto menu1
@@ -105,6 +111,7 @@ goto menu1
 @cls
 @echo Enables logging for violated rules detected by the selected verifier
 @echo extensions.
+@echo --------------------------------------------------------------------
 verifier /logging
 timeout 2
 goto menu1
@@ -113,6 +120,7 @@ goto menu1
 @cls
 @echo Enables live memory dump collection for violated rules detected by
 @echo the selected verifier extensions.
+@echo --------------------------------------------------------------------
 verifier /livedump
 timeout 2
 goto menu1
@@ -121,6 +129,7 @@ goto menu1
 @cls
 @echo Enables reporting of violated rules only for the first instances
 @echo detected by the selected verifier extensions.
+@echo --------------------------------------------------------------------
 verifier /onecheck
 goto menu1
 
