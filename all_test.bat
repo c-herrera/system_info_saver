@@ -6,22 +6,15 @@
 ::	Version       : 0.0.1
 ::	Author        : ----
 ::	Enviroment    : CLI- Command Terminal for Windows
-::	Description   : A simple benchmarking program, only uses
-::	basic operations, no reports to file, only console output
-::	Notes         : revised in february 28
+::	Description   : 
+::	
+::	Notes         : only executes the sanity tool, must be copied into the same 
+::	folder to work. 
 ::============================================================================
 ::
 
-
-
-
 @echo off
 @cls
-
-:: C:
-:: cd sanity
-::
-
 
 set titletext=Sanity Tool batch
 color 07
@@ -54,7 +47,7 @@ set DP=dp
 @echo -------------------------------------------------------
 @echo Test %basicdispclone% started at %time%
 Sanity.exe %EDP% %DP% Basic_display_clone_mode
-call :STEP 12
+
 timeout 2
 @echo Test ended at %time%
 
@@ -62,49 +55,49 @@ timeout 2
 @echo Test %basicdispextend% started at %time%
 Sanity.exe %EDP% %DP% Basic_display_Extended_mode
 @echo Test ended at %time%
-call :STEP 24
+
 timeout 2
 
 @echo -------------------------------------------------------
 @echo Test %OPMTest% started at %time%
 Sanity.exe %DP% OPM_Test
 @echo Test ended at %time%
-call :STEP 32
+
 timeout 2
 
 @echo -------------------------------------------------------
 @echo Test %PAVPTest% started at %time%
 Sanity.exe %EDP% %DP% PAVP_Test
 @echo Test ended at %time%
-call :STEP 48
+
 timeout 2
 
 @echo -------------------------------------------------------
 @echo Test %S3Test% started at %time%
 Sanity.exe %EDP% %DP% S3_Test
 @echo Test ended at %time%
-call :STEP 64
+
 timeout 2
 
 @echo -------------------------------------------------------
 @echo Test %S4Test% started at %time%
 Sanity.exe %EDP% %DP% S4_Test
 @echo Test ended at %time%
-call :STEP 76
+
 timeout 2
 
 @echo -------------------------------------------------------
 @echo Test %S3S4Test% started at %time%
 Sanity.exe %EDP% %DP% S3_S4_Test
 @echo Test ended at %time%
-call :STEP 88
+
 timeout 2
 
 @echo -------------------------------------------------------
 @echo Test %WIDITest% started at %time%
 Sanity.exe %DP% WIDI_Test
 @echo Test ended at %time%
-call :STEP 100
+
 timeout 2
 
 mode con cols=128 lines=64
@@ -188,12 +181,9 @@ type %WIDITest%%TextExtension% | find "Pass"
 
 goto QUIT
 
-:STEP
-title %titletext% %1% %% Completed
 
 
 :QUIT
 color 07
-cd ..
 timeout 3
 exit /b
