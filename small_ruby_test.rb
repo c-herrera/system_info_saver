@@ -1,6 +1,4 @@
-
 #!/usr/bin/ruby
-
 =begin
 ------------------------------------------------------------------------
  	File          : hello_world.rb
@@ -276,7 +274,9 @@ puts time.usec    # => 999999: microseconds
 puts time.zone    # => "UTC": timezone name
 
 
-
+puts "\nTesting Class Weekofday , etc"
+puts "-----------------------------------"
+print "Line is ", __LINE__, "\n";
 d1=Decade.new
 puts Week::FIRST_DAY
 Week.weeks_in_month
