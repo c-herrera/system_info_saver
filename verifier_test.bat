@@ -1,5 +1,3 @@
-
-
 @ECHO OFF
 SETLOCAL ENABLEEXTENSIONS
 
@@ -23,7 +21,7 @@ SET log=Log-%me%.%DATE:~10,4%_%DATE:~4,2%_%DATE:~7,2%%TIME:~0,2%_%TIME:~3,2%_%TI
 @echo   9. Verifier live dump
 @echo  10. Verifier one check
 @echo  11. Quit
-set /p input=Type an option- 
+set /p input=Type an option-
 
 
 if '%input%' == '1' goto verifier_help
