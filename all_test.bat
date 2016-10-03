@@ -6,10 +6,10 @@
 ::	Version       : 0.0.1
 ::	Author        : ----
 ::	Enviroment    : CLI- Command Terminal for Windows
-::	Description   : 
-::	
-::	Notes         : only executes the sanity tool, must be copied into the same 
-::	folder to work. 
+::	Description   :
+::
+::	Notes         : only executes the sanity tool, must be copied into the same
+::	folder to work.
 ::============================================================================
 ::
 
@@ -41,61 +41,62 @@ set ResultFolder="Results Sanity"
 set EDP=edp
 set HDMI=hdmi
 set DP=dp
+set sanity_tool=Sanity.exe
 
 :start
 
 @echo -------------------------------------------------------
 @echo Test %basicdispclone% started at %time%
-Sanity.exe %EDP% %DP% Basic_display_clone_mode
+%sanity_tool% %EDP% %DP% Basic_display_clone_mode
 
 timeout 2
 @echo Test ended at %time%
 
 @echo -------------------------------------------------------
 @echo Test %basicdispextend% started at %time%
-Sanity.exe %EDP% %DP% Basic_display_Extended_mode
+%sanity_tool% %EDP% %DP% Basic_display_Extended_mode
 @echo Test ended at %time%
 
 timeout 2
 
 @echo -------------------------------------------------------
 @echo Test %OPMTest% started at %time%
-Sanity.exe %DP% OPM_Test
+%sanity_tool% %DP% OPM_Test
 @echo Test ended at %time%
 
 timeout 2
 
 @echo -------------------------------------------------------
 @echo Test %PAVPTest% started at %time%
-Sanity.exe %EDP% %DP% PAVP_Test
+%sanity_tool% %EDP% %DP% PAVP_Test
 @echo Test ended at %time%
 
 timeout 2
 
 @echo -------------------------------------------------------
 @echo Test %S3Test% started at %time%
-Sanity.exe %EDP% %DP% S3_Test
+%sanity_tool% %EDP% %DP% S3_Test
 @echo Test ended at %time%
 
 timeout 2
 
 @echo -------------------------------------------------------
 @echo Test %S4Test% started at %time%
-Sanity.exe %EDP% %DP% S4_Test
+%sanity_tool% %EDP% %DP% S4_Test
 @echo Test ended at %time%
 
 timeout 2
 
 @echo -------------------------------------------------------
 @echo Test %S3S4Test% started at %time%
-Sanity.exe %EDP% %DP% S3_S4_Test
+%sanity_tool% %EDP% %DP% S3_S4_Test
 @echo Test ended at %time%
 
 timeout 2
 
 @echo -------------------------------------------------------
 @echo Test %WIDITest% started at %time%
-Sanity.exe %DP% WIDI_Test
+%sanity_tool% %DP% WIDI_Test
 @echo Test ended at %time%
 
 timeout 2
