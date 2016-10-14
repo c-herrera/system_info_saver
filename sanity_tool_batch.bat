@@ -19,7 +19,6 @@
 set titletext=Sanity Tool batch
 color 07
 title %titletext%
-mode con cols=128 lines=64
 
 @echo -------------------------------------------------------
 @echo  Running batch of tests for Sanity tool
@@ -101,7 +100,6 @@ timeout 2
 
 timeout 2
 
-mode con cols=128 lines=64
 @cls
 @echo Main tests ended, searching results ...
 
