@@ -7,33 +7,33 @@
 SetLocal EnableDelayedExpansion EnableExtensions
 @echo off
 @cls
-set 7zip_folder=
-set 7zip_app=7z.exe
+set zipfolder=
+set zipapp=7z.exe
 set is_ok=
 
 @pause
 
-if exist "c:\Program Files\7-Zip\7z.exe" (
-	REM set 7zip_folder="c:\Program Files\7-Zip\7z.exe"
-	REM @echo f %7zip_folder%
-	set is_ok="true"
+:: Look for 64 Program Files
+if exist %ProgramFiles% (
+	if exist %ProgramFiles%\7-Zip\7z.exe (
+		set zipfolder=%ProgramFiles%\7-Zip\7z.exe
+		@echo Folder is %zipfolder%
+		goto have7zip
+	)
 )  
 
-if exist "c:\Program Files (x86)\7-Zip\7z.exe" (
-	@echo 2
-	REM set 7zip_folder=""c:\Program Files (x86)\7-Zip\7z.exe"
-	set is_ok="true"
-) 
-
-if /b "%is_ok%"=="true" (
-	goto have7zip
-) else (
-	goto failure
-)
+if exist %ProgramFiles(x86)% (
+	if exist %ProgramFiles(x86)%\7-Zip\7z.exe (
+		set zipfolder=%ProgramFiles(x86)%\7-Zip\7z.exe
+		@echo Folder is %zipfolder%
+		goto have7zip
+	)
+)  
 
 :have7zip
 @echo ------------------------------------------------
 @echo Starting batch compression at %date%-%time%
+@echo Path of 7 zip is %zipfolder%
 @echo Using 7 zip to compress the next folders in %CD%
 @echo ------------------------------------------------ 
 @dir /d
@@ -42,8 +42,8 @@ for /d %%X in (*) do (
 @echo ============================================
 @echo Creating "%%X.zip" from "%%X\"
 @echo ============================================
- "c:\Program Files\7-Zip\7z.exe" a "%%X.zip" "%%X\"
-REM %7zip_folder% a "%%X.zip" "%%X\"
+REM "c:\Program Files\7-Zip\7z.exe" a "%%X.zip" "%%X\"
+%zipfolder% a "%%X.zip" "%%X\"
 ) 
 @echo Done!
 :failure
