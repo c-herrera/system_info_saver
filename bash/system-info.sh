@@ -8,6 +8,7 @@
 
 LogDir=SUT_Info
 
+# Setting for a future checkup
 set +x
 
 if  [ $# -ne 0 ]
@@ -16,9 +17,7 @@ then
 	exit 1
 fi
 
-
-
-# Get ridd of all the term clutter
+# Get rid of all the term clutter
 clear
 # A nice introduction ....
 echo -e "-----------------------------------------------------------"
@@ -31,9 +30,21 @@ uname -m
 if  [ -d "$LogDir" ]
 then
 	echo "$LogDir directory exists, will continue"
+	touch first.log
+	date >> first.log
 else
 	echo "$LogDir directory not found, creating one"
 	mkdir $LogDir
+	touch first.log
+	date >> first.log
+fi
+
+if [ -d  "/bin" ]
+then 
+	echo "main directory BIN is present continue ..."
+else
+	echo "BIN directory is not present at // bailing out..."
+	exit 1
 fi
 
 # And proceed with the script ...
