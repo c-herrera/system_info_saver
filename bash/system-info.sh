@@ -16,6 +16,49 @@ set +x
 LogDir=SUT_Info_$(date +%Y_%m_%d_%H_%M_%S)
 version="0.0.2"
 
+# Detecting OS and
+arch=$(uname -m)
+kernel=$(uname -r)
+if [ -n "$(command -v lsb_release)" ]; then
+	distroname=$(lsb_release -s -d)
+elif [ -f "/etc/os-release" ]; then
+	distroname=$(grep PRETTY_NAME /etc/os-release | sed 's/PRETTY_NAME=//g' | tr -d '="')
+	distroshortname=$(grep PRETTY_NAME /etc/os-release | sed 's/PRETTY_NAME=//g' | sed 's/["]//g' | awk '{print $1}')
+elif [ -f "/etc/debian_version" ]; then
+	distroname="Debian $(cat /etc/debian_version)"
+elif [ -f "/etc/redhat-release" ]; then
+	distroname=$(cat /etc/redhat-release)
+else
+	distroname="$(uname -s) $(uname -r)"
+fi
+
+case ${distroshortname} in
+	"Red" )
+	distrovar=RED_HAT
+	;;
+	"Ubuntu" )
+	distrovar=UBUNTU
+	;;
+	"SUSE" )
+	distrovar=SUSE
+	;;	
+esac
+
+
+
+case $(uname) in 
+	Linux )
+	which yum && { distrotype=RED_HAT;  }
+	which zypper && { distrotype=SUSE;  }
+	which apt-get && { distrotype=DEBIAN; }
+	;;
+	* )
+	# Nothing here
+	;;
+esac
+
+
+
 # Setting for a future checkup
 if  [ $# -ne 0 ]
 then
@@ -23,13 +66,15 @@ then
 	exit 1
 fi
 
+#Start here :
 # Get rid of all the term clutter
 clear
 # A nice introduction ....
 echo -e "-----------------------------------------------------------"
 echo -e "Running system gathering script for Linux (generic script) on :"
+echo "OS : ${distroname} Arch : ${arch} Kernel : ${kernel}"
+echo "Distrotype ${distrotype}"
 date
-uname -rm
 echo "Script version : $version"
 # Make our new logging directory
 if  [ -d "$LogDir" ]
@@ -41,7 +86,7 @@ else
 	echo "$LogDir directory not found, creating one"
 	mkdir $LogDir
 	touch $LogDir/executed_time.log
-	echo "Alloted times " >> $LogDir/executed_time.log
+	echo "Starup time : " >> $LogDir/executed_time.log
 	date >> $LogDir/executed_time.log
 fi
 
@@ -52,6 +97,7 @@ else
 	echo "BIN directory is not present at // bailing out..."
 	exit 1
 fi
+
 
 # Annnnd proceed with the script ...
 echo "-----------------------------------------------------------"
@@ -141,11 +187,5 @@ cat /proc/diskstats | column -t > $LogDir/linux_diskstats.log
 echo "-----------------------------------------------------------"
 
 echo "Script is done, you may want to check the logs on ${LogDir} "
+echo "End time : " >> $LogDir/executed_time.log
 date  >> $LogDir/executed_time.log
-
-
-
-
-
-
-
