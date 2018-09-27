@@ -4,7 +4,7 @@
 # Description   : Script will try to get as much system data as posible and save
 #                 it a single location where user can pick and seek for whatever
 #                 is required
-# Version       : 0.0.1
+# Version       : 0.0.2
 # Date          : 05-03-2018
 # Created by    : Carlos Herrera.
 # Notes         : To run type sh system-info.sh in a system terminal with root access.
@@ -13,10 +13,11 @@
 
 # Fun times on errors!
 set +x
+currenthost=$(cat /etc/hostname)
 LogDir=SUT_Info_$(date +%Y_%m_%d_%H_%M_%S)
 version="0.0.2"
 
-# Detecting OS and
+# Detecting OS and Distrotype
 arch=$(uname -m)
 kernel=$(uname -r)
 if [ -n "$(command -v lsb_release)" ]; then
@@ -44,13 +45,23 @@ case ${distroshortname} in
 	;;	
 esac
 
-
-
 case $(uname) in 
 	Linux )
-	which yum && { distrotype=RED_HAT;  }
-	which zypper && { distrotype=SUSE;  }
-	which apt-get && { distrotype=DEBIAN; }
+	if  [ -x "$(command -v yum)" ]; then
+		distrotype=RED_HAT
+	fi
+	
+	if  [ -x "$(command -v zypper)" ]; then
+		distrotype=SUSE
+	fi
+	
+	if  [ -x "$(command -v apt-get)" ]; then
+		distrotype=DEBIAN
+	fi
+	
+	#which yum && { distrotype=RED_HAT;  }
+	#which zypper && { distrotype=SUSE;  }
+	#which apt-get && { distrotype=DEBIAN; }
 	;;
 	* )
 	# Nothing here
@@ -86,6 +97,9 @@ else
 	echo "$LogDir directory not found, creating one"
 	mkdir $LogDir
 	touch $LogDir/executed_time.log
+	echo "Current username : $(whoami)" >> $LogDir/executed_time.log
+	echo "Logged as        : $(logname)" >> $LogDir/executed_time.log
+	echo "Hostname  is     : $currenthost" >> $LogDir/executed_time.log
 	echo "Starup time : " >> $LogDir/executed_time.log
 	date >> $LogDir/executed_time.log
 fi
@@ -101,9 +115,16 @@ fi
 
 # Annnnd proceed with the script ...
 echo "-----------------------------------------------------------"
-echo "Running (LSHW) : System information"
-lshw -html > $LogDir/lshw-system-info.html
-lshw -short > $LogDir/lshw-system-info-brief.log
+if [ -x "$(command -v lshw)" ]; then 
+	echo "Running (LSHW) : System information, please wait"
+	lshw -html > $LogDir/lshw-system-info.html
+	lshw -short > $LogDir/lshw-system-info-brief.log
+fi
+
+if [ -x "$(command -v hwinfo)" ]; then 
+	echo "Running (HWINFO) : System information, please wait"
+	hwinfo --all --log=$LogDir/hwinfo-log.txt
+fi
 echo "Running (DMIDECODE) : Full System hardware information"
 dmidecode > $LogDir/dmidecode-system-dmi-full-hw.log
 echo "-----------------------------------------------------------"
@@ -125,7 +146,7 @@ echo "Running (LSSCSI) : SCSI devices."
 lsscsi --size --verbose | column -t > $LogDir/lsssci-scsi-devices-verbose.log
 echo "-----------------------------------------------------------"
 echo "Running (FDISK) : Filesystem info."
-fdisk -l -s > $LogDir/fdisk-fs-sys.log
+fdisk -l > $LogDir/fdisk-fs-sys.log
 echo "-----------------------------------------------------------"
 echo "Running (DF) : Disk usage stats"
 df -h > $LogDir/df-disk-usage.log
@@ -141,13 +162,15 @@ echo "Running (LSMOD) : Module information"
 lsmod | column -t > $LogDir/lsmod-modules-loaded.log
 echo "-----------------------------------------------------------"
 echo "Running (DMESG) : Getting DMESG info."
-dmesg --reltime > $LogDir/dmesg.log
+dmesg > $LogDir/dmesg.log
+dmesg --level=warn > $LogDir/dmesg-warnings.log
+dmesg --level=err > $LogDir/dmesg-errors.log
 echo "-----------------------------------------------------------"
-echo "Power Mgnt : Getting C-States driver"
-cat /sys/devices/system/cpu/cpuidle/current_driver > $LogDir/pwr-cstates-driver.log
-echo "-----------------------------------------------------------"
-echo "Power Mngt : Getting system idle driver info."
-cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver > $LogDir/pwr-cstates-current-idle_driver.log
+echo "Power Mgnt : Getting C-States and Scalign driver info"
+echo "CPU idle current driver :" > $LogDir/pwr-cstates-driver.log
+cat /sys/devices/system/cpu/cpuidle/current_driver >> $LogDir/pwr-cstates-driver.log
+echo "CPU Scaling driver :" >> $LogDir/pwr-cstates-driver.log
+cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver >> $LogDir/pwr-cstates-driver.log
 echo "-----------------------------------------------------------"
 echo "OS  : System version :"
 cat /proc/version > $LogDir/proc-system-version.log
@@ -189,3 +212,4 @@ echo "-----------------------------------------------------------"
 echo "Script is done, you may want to check the logs on ${LogDir} "
 echo "End time : " >> $LogDir/executed_time.log
 date  >> $LogDir/executed_time.log
+
