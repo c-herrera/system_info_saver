@@ -117,7 +117,18 @@ esac
 
 #Main folder setup
 function logSetup() {
+	echo "0"
+}
 
+function folderSetup(){
+	mkdir --parents $LogDir/$hw_dir
+	mkdir --parents $LogDir/$os_dir
+	mkdir --parents $LogDir/$net_dir
+	mkdir --parents $LogDir/$power_dir
+	mkdir --parents $LogDir/$storage_dir
+	mkdir --parents $LogDir/$memory_dir
+	mkdir --parents $LogDir/$modules_dir
+	mkdir --parents $LogDir/$io_dir
 }
 
 
@@ -201,12 +212,7 @@ then
 	echo "Starup time : " >> $LogDir/$logfile
 	date >> $LogDir/$logfile
 	# Create folder for logs
-	mkdir --parents $LogDir/$hw_dir
-	mkdir --parents $LogDir/$os_dir
-	mkdir --parents $LogDir/$net_dir
-	mkdir --parents $LogDir/$power_dir
-	mkdir --parents $LogDir/$storage_dir
-	mkdir --parents $LogDir/$memory_dir
+	folderSetup
 else
 	echo "$LogDir directory not found, creating one"
 	mkdir $LogDir
@@ -220,12 +226,7 @@ else
 	echo "Starup time : " >> $LogDir/$logfile
 	# Create folder for logs
 	date >> $LogDir/$logfile
-	mkdir --parents $LogDir/$hw_dir
-	mkdir --parents $LogDir/$os_dir
-	mkdir --parents $LogDir/$net_dir
-	mkdir --parents $LogDir/$power_dir
-	mkdir --parents $LogDir/$storage_dir
-	mkdir --parents $LogDir/$memory_dir
+	folderSetup
 fi
 
 # Checking this does not hurt
@@ -363,7 +364,7 @@ if [ -f /proc/partitions  ];then
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
-stringcommand=mount
+stringcommand="mounted partitions"
 if [ -x "$(command -v mount)" ]; then 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
@@ -379,6 +380,7 @@ if [ -f /proc/scsi  ]; then
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
+stringcommand="SCSSI Mounts"
 if [ -f /proc/scsi/mounts ]; then 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
@@ -394,13 +396,17 @@ if [ -f /proc/diskstats ]; then
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
+echo "- Storage section ends " >> $LogDir/$logfile
+
 #IO section
+
+echo "- IO section begins " >> $LogDir/$logfile
 
 stringcommand=IOPORTS
 if [ -f /proc/ioports ]; then 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
-	cat /proc/ioports $LogDir/$io_dir/ioports.log
+	cat /proc/ioports > $LogDir/$io_dir/ioports.log
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi 
 
@@ -413,7 +419,7 @@ if [ -x "$(command -v lsusb)" ]; then
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
-
+stringcommand=SoftwareIRQ
 if [ -f /proc/softirqs ]; then 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
@@ -421,6 +427,7 @@ if [ -f /proc/softirqs ]; then
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
+stringcommand=IOMEM
 if [ -f /proc/iomem ]; then 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
@@ -428,8 +435,12 @@ if [ -f /proc/iomem ]; then
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
+echo "- IO section ends " >> $LogDir/$logfile
+
 #Memory section
 
+echo "- Memory section begins " >> $LogDir/$logfile
+stringcommand=PAGETYPEINFO
 if [ -f /proc/pagetypeinfo ]; then 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
@@ -437,6 +448,7 @@ if [ -f /proc/pagetypeinfo ]; then
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
+stringcommand=FREEMEM
 if [ -x "$(command -v free)" ]; then 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
@@ -445,9 +457,12 @@ if [ -x "$(command -v free)" ]; then
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
+echo "- Memory section ends " >> $LogDir/$logfile
 
 #Modules section
 
+echo "- Modules section begins" >> $LogDir/$logfile
+stringcommand=LSMOD
 if [ -x "$(command -v lsmod)" ]; then 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
@@ -455,6 +470,7 @@ if [ -x "$(command -v lsmod)" ]; then
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
+stringcommand=MODULES
 if [ -f /proc/modules ]; then 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
@@ -462,8 +478,12 @@ if [ -f /proc/modules ]; then
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
+echo "- Modules section ends " >> $LogDir/$logfile
+
 #Power Mngt Section
 
+echo "- PowerMngt section begins" >> $LogDir/$logfile
+stringcommand=POWERDRIVER
 if [ -d /sys/devices/system/cpu ]; then 
 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
@@ -475,9 +495,11 @@ if [ -d /sys/devices/system/cpu ]; then
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
-
+echo "- PowerMngt section ends" >> $LogDir/$logfile
 #Network section
 
+echo "- Network section begins" >> $LogDir/$logfile
+stringcommand=NETDEV
 if [ -f /proc/net/dev ]; then 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
@@ -485,32 +507,34 @@ if [ -f /proc/net/dev ]; then
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
+stringcommand=IFCONFIG
 if [ -x "$(command -v ifconfig)" ]; then 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
-	ifconfig  > $LogDir/$net_dir/network_devices_stats.log
+	ifconfig  > $LogDir/$net_dir/network_ipconfig.log
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi 
 
+stringcommand=IP
 if [ -x "$(command -v ip)" ]; then 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
-	ip  > $LogDir/$net_dir/network_devices_stats.log
+	ip  addr > $LogDir/$net_dir/network_ips.log
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi 
-
+echo "- Network section ends" >> $LogDir/$logfile
 
 #OS Enviroment section
 
 if [ -f /proc/ioports ]; then 
 echo "OS  : System version :"
-cat /proc/version > $LogDir/proc-system-version.log
+cat /proc/version > $LogDir/$os_dir/proc-system-version.log
 fi
 
 
 if [ -f /var/log/messages ]; then 
 echo "OS : Getting all system messages"
-cat /var/log/messages > $LogDir/messages.log
+cat /var/log/messages > $LogDir/$os_dir/messages.log
 fi
 
 
@@ -530,7 +554,7 @@ fi
 
 if [ -f /proc/crypto ]; then 
 echo "OS : Crytograhpy on OS :"
-cat /proc/crypto > $LogDir/linux_os_cryto.log
+cat /proc/crypto > $LogDir/linux_os_crypto.log
 fi
 
 
