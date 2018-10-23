@@ -4,12 +4,13 @@
 # Description   : Script will try to get as much system data as posible and save
 #                 it a single location where user can pick and seek for whatever
 #                 is required
-# Version       : 0.0.3
+# Version       : 0.0.4
 # Date          : 05-03-2018
 # Created by    : Carlos Herrera.
 # Notes         : To run type sh system-info.sh in a system terminal with root access.
 #                 If modified, please contact the autor to add and check the changes
 # Scope         : Generic linux info gathering script, works good on red hat 7.5
+#               : Do not remove this header, thanks!
 
 # Fun times on errors!
 set +x
@@ -51,75 +52,70 @@ function pause(){
 
 # Prototype 1 command 2 arguments (opt) 3 path to save 4 log filename
 function RunCmdandLog() {
-if [ -n "$(command -v $1)" ]; then
-	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $1 running ] "
-	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $1 running ] " >> $3/$4
-	$1 $2 >> $3/$4
-	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $1 done ] " >> $3/$4
-fi
-
+	if [ -n "$(command -v $1)" ]; then
+		echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $1 running ] "
+		echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $1 running ] " >> $3/$4
+		$1 $2 >> $3/$4
+		echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $1 done ] " >> $3/$4
+	fi
 }
 
 
 # Detecting OS and Distrotype
 function OS_detect() {
-arch=$(uname -m)
-kernel=$(uname -r)
-if [ -n "$(command -v lsb_release)" ]; then
-	distroname=$(lsb_release -s -d)
-elif [ -f "/etc/os-release" ]; then
-	distroname=$(grep PRETTY_NAME /etc/os-release | sed 's/PRETTY_NAME=//g' | tr -d '="')
-	distroshortname=$(grep PRETTY_NAME /etc/os-release | sed 's/PRETTY_NAME=//g' | sed 's/["]//g' | awk '{print $1}')
-elif [ -f "/etc/debian_version" ]; then
-	distroname="Debian $(cat /etc/debian_version)"
-elif [ -f "/etc/redhat-release" ]; then
-	distroname=$(cat /etc/redhat-release)
-else
-	distroname="$(uname -s) $(uname -r)"
-fi
+	arch=$(uname -m)
+	kernel=$(uname -r)
+	if [ -n "$(command -v lsb_release)" ]; then
+		distroname=$(lsb_release -s -d)
+	elif [ -f "/etc/os-release" ]; then
+		distroname=$(grep PRETTY_NAME /etc/os-release | sed 's/PRETTY_NAME=//g' | tr -d '="')
+		distroshortname=$(grep PRETTY_NAME /etc/os-release | sed 's/PRETTY_NAME=//g' | sed 's/["]//g' | awk '{print $1}')
+	elif [ -f "/etc/debian_version" ]; then
+		distroname="Debian $(cat /etc/debian_version)"
+	elif [ -f "/etc/redhat-release" ]; then
+		distroname=$(cat /etc/redhat-release)
+	else
+		distroname="$(uname -s) $(uname -r)"
+	fi
 
-case ${distroshortname} in
-	"Red" )
-	distrovar=RED_HAT
-	;;
-	"Ubuntu" )
-	distrovar=UBUNTU
-	;;
-	"SUSE" )
-	distrovar=SUSE
-	;;	
-esac
+	case ${distroshortname} in
+		"Red" )
+		distrovar=RED_HAT
+		;;
+		"Ubuntu" )
+		distrovar=UBUNTU
+		;;
+		"SUSE" )
+		distrovar=SUSE
+		;;	
+	esac
 
-case $(uname) in 
-	Linux )
-	if  [ -x "$(command -v yum)" ]; then
-		distrotype=RED_HAT_LIKE
-	fi
-	
-	if  [ -x "$(command -v zypper)" ]; then
-		distrotype=SUSE_LIKE
-	fi
-	
-	if  [ -x "$(command -v apt-get)" ]; then
-		distrotype=DEBIAN_LIKE
-	fi
-	;;
-	
-	MacOS )
-	#nothing here
-	;;
-	
-	* )
-	# Nothing here
-	;;
-esac
+	case $(uname) in 
+		Linux )
+		if  [ -x "$(command -v yum)" ]; then
+			distrotype=RED_HAT_LIKE
+		fi
+		
+		if  [ -x "$(command -v zypper)" ]; then
+			distrotype=SUSE_LIKE
+		fi
+		
+		if  [ -x "$(command -v apt-get)" ]; then
+			distrotype=DEBIAN_LIKE
+		fi
+		;;
+		
+		MacOS )
+		#nothing here
+		;;
+		
+		* )
+		# Nothing here
+		;;
+	esac
 }
 
-#Main folder setup
-function logSetup() {
-	echo "0"
-}
-
+#Main folders setup
 function folderSetup(){
 	mkdir --parents $LogDir/$hw_dir
 	mkdir --parents $LogDir/$os_dir
@@ -132,59 +128,6 @@ function folderSetup(){
 }
 
 
-arch=$(uname -m)
-kernel=$(uname -r)
-if [ -n "$(command -v lsb_release)" ]; then
-	distroname=$(lsb_release -s -d)
-elif [ -f "/etc/os-release" ]; then
-	distroname=$(grep PRETTY_NAME /etc/os-release | sed 's/PRETTY_NAME=//g' | tr -d '="')
-	distroshortname=$(grep PRETTY_NAME /etc/os-release | sed 's/PRETTY_NAME=//g' | sed 's/["]//g' | awk '{print $1}')
-elif [ -f "/etc/debian_version" ]; then
-	distroname="Debian $(cat /etc/debian_version)"
-elif [ -f "/etc/redhat-release" ]; then
-	distroname=$(cat /etc/redhat-release)
-else
-	distroname="$(uname -s) $(uname -r)"
-fi
-
-case ${distroshortname} in
-	"Red" )
-	distrovar=RED_HAT
-	;;
-	"Ubuntu" )
-	distrovar=UBUNTU
-	;;
-	"SUSE" )
-	distrovar=SUSE
-	;;	
-esac
-
-case $(uname) in 
-	Linux )
-	if  [ -x "$(command -v yum)" ]; then
-		distrotype=RED_HAT_LIKE
-	fi
-	
-	if  [ -x "$(command -v zypper)" ]; then
-		distrotype=SUSE_LIKE
-	fi
-	
-	if  [ -x "$(command -v apt-get)" ]; then
-		distrotype=DEBIAN_LIKE
-	fi
-	;;
-	
-	MacOS )
-	#nothing here
-	;;
-	
-	* )
-	# Nothing here
-	;;
-esac
-
-
-
 # Setting for a future command line checkup
 if  [ $# -ne 0 ]
 then
@@ -195,9 +138,9 @@ then
 fi
 
 #Start here :
-# Get rid of all the term clutter
-clear
 
+#Linux distro detection
+OS_detect
 # Make our new logging directory
 if  [ -d "$LogDir" ]
 then
@@ -238,24 +181,36 @@ else
 	exit 1
 fi
 
-
-#RunandLog lshw -html $LogDir/$hw_dir/ lshw_system-specs.html
-#RunandLog lshw -short $LogDir/$hw_dir/ lshw_system-info.html
-#RunandLog hwinfo "-all --log=$LogDir/$hw_dir/hwinfo.log" $LogDir/$hw_dir/ hwinfodone.log
-#pause
-
-
+# Get rid of all the term clutter
+clear
 
 # A nice introduction ....
-echo "-----------------------------------------------------------"
-echo "Running system gathering script for Linux (generic script) on :"
-echo "OS : ${distroname} Arch : ${arch} Kernel : ${kernel}"
-echo "Distrotype ${distrotype}"
-echo "Script version : $version"
+
+echo ""
+echo "************************************************************"
+echo ""
+echo "System Report for $(cat /etc/hostname) ($(hostname -I | awk '{print $1}'))"
+echo "Generated at $(date)"
+echo "************************************************************"
+echo " Uptime:         $(uptime -p)"
+echo " Kernel Version: $(uname -r)"
+echo " Load info:      $(cat /proc/loadavg)"
+echo " Disk status:    $(df -h / | awk 'FNR == 2 {print $5 " used (" $4 " free)"}')"
+echo " Memory status:  $(free -h | awk 'FNR == 2 {print $3 " used (" $4 " free)"}')"
+echo " OS : ${distroname} "
+echo " Arch : ${arch}"
+echo " Kernel : ${kernel}"
+echo " Distrotype ${distrotype}"
+echo " Script version : $version"
 
 # Annnnd proceed with the script ...
 echo "- Starting the recolletion " >> $LogDir/$logfile
 echo "- Process started at $(date +%Y_%m_%d_%H_%M_%S) " >> $LogDir/$logfile
+
+#RunandLog lshw -html $LogDir/$hw_dir/ lshw_system-specs.html
+#RunandLog lshw -short $LogDir/$hw_dir/ lshw_system-info.html
+#RunandLog hwinfo "-all --log=$LogDir/$hw_dir/hwinfo.log" $LogDir/$hw_dir/hwinfodone.log
+#pause
 
 
 # Hardware logs section
@@ -295,6 +250,7 @@ if [ -x "$(command -v lspci)" ]; then
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
 	lspci -t -vmm > $LogDir/$hw_dir/lspci-pci-devices-topology-verbose.log
+	lspci -vvvxxx > $LogDir/$hw_dir/lspci-pci-devices-extra-Verbose.log
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
@@ -470,7 +426,7 @@ if [ -x "$(command -v lsmod)" ]; then
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
-stringcommand=MODULES
+stringcommand="System loaded modules"
 if [ -f /proc/modules ]; then 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
@@ -499,7 +455,7 @@ echo "- PowerMngt section ends" >> $LogDir/$logfile
 #Network section
 
 echo "- Network section begins" >> $LogDir/$logfile
-stringcommand=NETDEV
+stringcommand="Network devices statistics"
 if [ -f /proc/net/dev ]; then 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
@@ -507,7 +463,7 @@ if [ -f /proc/net/dev ]; then
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
-stringcommand=IFCONFIG
+stringcommand="Ifconfig "
 if [ -x "$(command -v ifconfig)" ]; then 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
@@ -515,7 +471,7 @@ if [ -x "$(command -v ifconfig)" ]; then
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi 
 
-stringcommand=IP
+stringcommand="Ip Address"
 if [ -x "$(command -v ip)" ]; then 
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
 	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
@@ -526,42 +482,102 @@ echo "- Network section ends" >> $LogDir/$logfile
 
 #OS Enviroment section
 
-if [ -f /proc/ioports ]; then 
-echo "OS  : System version :"
-cat /proc/version > $LogDir/$os_dir/proc-system-version.log
+echo "- OS Enviroment logs" >> $LogDir/$logfile
+
+stringcommand="System version"
+if [ -f /proc/version ]; then 
+	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
+	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
+	cat /proc/version > $LogDir/$os_dir/proc-system-version.log
+	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
-
+stringcommand="System messages"
 if [ -f /var/log/messages ]; then 
-echo "OS : Getting all system messages"
-cat /var/log/messages > $LogDir/$os_dir/messages.log
+	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
+	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
+	cat /var/log/messages > $LogDir/$os_dir/messages.log
+	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
-
+stringcommand="Dmesg ..."
 if [ -x "$(command -v dmesg)" ]; then 
-echo "Running (DMESG) : Getting DMESG info."
-dmesg > $LogDir/dmesg.log
-dmesg --level=warn > $LogDir/dmesg-warnings.log
-dmesg --level=err > $LogDir/dmesg-errors.log
+	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
+	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
+	dmesg > $LogDir/dmesg.log
+	dmesg --level=warn > $LogDir/$os_dir/dmesg-warnings.log
+	dmesg --level=err > $LogDir/$os_dir/dmesg-errors.log
+	dmesg --level=crit > $LogDir/$os_dir/dmesg-critial.log
+	dmesg --level=debug > $LogDir/$os_dir/dmesg-debug.log
+	dmesg > dmesg.log
+	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
 
-
+stringcommand="OS Boot commandline"
 if [ -f /proc/cmdline ]; then 
-echo "OS : Linux boot command line :"
-cat /proc/cmdline > $LogDir/linux_os_boot_line.log
+	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
+	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
+	cat /proc/cmdline > $LogDir/$os_dir/linux_os_boot_line.log
+	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
+
+stringcommand="OS Cryptography"
 if [ -f /proc/crypto ]; then 
-echo "OS : Crytograhpy on OS :"
-cat /proc/crypto > $LogDir/linux_os_crypto.log
+	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] "
+	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand running ] " >> $LogDir/$logfile
+	cat /proc/crypto > $LogDir/$os_dir/linux_os_crypto.log
+	echo "- [ $(date +%Y_%m_%d_%H_%M_%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
 
 
+echo "- OS Enviroment logs ends" >> $LogDir/$logfile
 
 
+echo "Getting the Redhat runlevel services..."
+systemctl list-unit-files > $LogDir/$os_dir/system_units.log
+
+
+echo $(date +%m%d%y-%H%M) - Getting OS configuration files from /etc/modprobe.d... >> $log
+echo 'Getting OS configuration files from /etc/modprobe.d' and saving in $PWD/$_host/$_time/etc
+cp -R /etc/modprobe.d* ./$_host/$_time/etc/ 2>> $errorlog
+
+cp /etc/hosts ./$_host/$_time/network
+route > ./$_host/$_time/network/route.txt  2>> $errorlog
+
+
+
+echo $(date +%m%d%y-%H%M) - Getting driver/module information... >> $log
+echo "Getting driver/module information and placing it in $PWD/$_host/$_time/OS/drivers.txt"
+if [ -f drivers.txt ]; then rm drivers.txt; fi
+lsmod | sed 's/ .*//g'| sort | sed '/Module/d' > lsmod.txt
+cat lsmod.txt|while read line
+do
+	modinfo $line | grep -w "version:" > version.txt
+	VERSION=version.txt
+	if [[ -s $VERSION ]]; then
+		modinfo $line >> alldriverinfo.txt
+		modinfo $line | grep -e "description:"  >> ./$_host/$_time/OS/drivers.txt
+		modinfo $line | grep -w "filename:"|sed 's/\/.*\///g' >> ./$_host/$_time/OS/drivers.txt
+		modinfo $line | grep -w "version:"  >> ./$_host/$_time/OS/drivers.txt
+		echo >> ./$_host/$_time/OS/drivers.txt
+	else
+		continue
+	fi
+done
+
+echo $(date +%m%d%y-%H%M) - Getting a list of all installed RPMs on the system... >> $log
+echo Getting a list of all installed RPMs on the system.
+echo They will be in the $PWD/$_host/$_time/OS folder.
+rpm -qa|sort > ./$_host/$_time/OS/installed_rpms.txt
+
+history > ./$_host/$_time/logs/history.txt
+
+
+# end 
 echo "Script is done, you may want to check the logs on ${LogDir} "
 echo "End time : " >> $LogDir/$logfile
 date  >> $LogDir/$logfile
-
+exit
