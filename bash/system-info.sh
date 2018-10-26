@@ -30,7 +30,7 @@ currenthost=$(cat /etc/hostname)
 LogDir=sut_Info_$(date +%Y_%m_%d_%H_%M_%S)
 logfile=scriptlog.txt
 version="0.0.5"
-errorlog=errors.txt
+errorlog=$LogDir/errors.txt
 
 #script folders
 
@@ -60,6 +60,23 @@ function RunCmdandLog() {
 	fi
 }
 
+#System info banner
+function systembanner() {
+	echo "************************************************************"
+	echo "System Report for $(cat /etc/hostname) ($(hostname -I | awk '{print $1}'))"
+	echo "Generated at $(date)"
+	echo "************************************************************"
+	echo " Uptime:         $(uptime p)"
+	echo " Kernel Version: $(uname -r)"
+	echo " Load info:      $(cat /proc/loadavg)"
+	echo " Disk status:    $(df -h / | awk 'FNR == 2 {print $5 " used (" $4 " free)"}')"
+	echo " Memory status:  $(free -h | awk 'FNR == 2 {print $3 " used (" $4 " free)"}')"
+	echo " OS : ${distroname} "
+	echo " Arch : ${arch}"
+	echo " Kernel : ${kernel}"
+	echo " Distrotype ${distrotype}"
+	echo " Script version : $version"
+}
 
 # Detecting OS and Distrotype
 function OS_detect() {
@@ -146,13 +163,9 @@ if  [ -d "$LogDir" ]
 then
 	echo "$LogDir directory exists, will continue"
 	touch $LogDir/$logfile
-	echo "Current username : $(whoami)" >> $LogDir/$logfile
-	echo "Logged as        : $(logname)" >> $LogDir/$logfile
-	echo "Hostname  is     : $currenthost" >> $LogDir/$logfile
-	echo "OS : ${distroname} Arch : ${arch} Kernel : ${kernel}" >> $LogDir/$logfile
-	echo "Distrotype ${distrotype}" >> $LogDir/$logfile
-	echo "Script version : $version" >> $LogDir/$logfile
-	echo "Starup time : " >> $LogDir/$logfile
+	systembanner
+	systembanner >> $LogDir/$logfile
+	echo "" >> $LogDir/$logfile
 	date >> $LogDir/$logfile
 	# Create folder for logs
 	folderSetup
@@ -160,13 +173,9 @@ else
 	echo "$LogDir directory not found, creating one"
 	mkdir $LogDir
 	touch $LogDir/$logfile
-	echo "Current username : $(whoami)" >> $LogDir/$logfile
-	echo "Logged as        : $(logname)" >> $LogDir/$logfile
-	echo "Hostname  is     : $currenthost" >> $LogDir/$logfile
-	echo "OS : ${distroname} Arch : ${arch} Kernel : ${kernel}" >> $LogDir/$logfile
-	echo "Distrotype ${distrotype}" >> $LogDir/$logfile
-	echo "Script version : $version" >> $LogDir/$logfile
-	echo "Starup time : " >> $LogDir/$logfile
+	systembanner
+	systembanner >> $LogDir/$logfile
+	echo "" >> $LogDir/$logfile
 	# Create folder for logs
 	date >> $LogDir/$logfile
 	folderSetup
@@ -185,23 +194,7 @@ fi
 clear
 
 # A nice introduction ....
-
-echo ""
-echo "************************************************************"
-echo ""
-echo "System Report for $(cat /etc/hostname) ($(hostname -I | awk '{print $1}'))"
-echo "Generated at $(date)"
-echo "************************************************************"
-echo " Uptime:         $(uptime p)"
-echo " Kernel Version: $(uname -r)"
-echo " Load info:      $(cat /proc/loadavg)"
-echo " Disk status:    $(df -h / | awk 'FNR == 2 {print $5 " used (" $4 " free)"}')"
-echo " Memory status:  $(free -h | awk 'FNR == 2 {print $3 " used (" $4 " free)"}')"
-echo " OS : ${distroname} "
-echo " Arch : ${arch}"
-echo " Kernel : ${kernel}"
-echo " Distrotype ${distrotype}"
-echo " Script version : $version"
+systembanner
 
 # Annnnd proceed with the script ...
 echo "- Starting the recolletion " >> $LogDir/$logfile
@@ -506,9 +499,11 @@ stringcommand="System version"
 if [ -f /proc/version ]; then 
 	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
 	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
-	cat /proc/version > $LogDir/$os_dir/proc-system-version.log
+	cat /proc/version >> $LogDir/$os_dir/os-system-version.log
 	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
+
+pause
 
 stringcommand="System messages"
 if [ -f /var/log/messages ]; then 
@@ -613,8 +608,8 @@ echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
 stringcommand="OS command history"
 echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
 echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
-if [ -x "$(command -v yum)" ]; then 
-	history > $LogDir/$os_dir/history.txt 2>>$errorlog
+if [ -x "$(command -v history)" ]; then 
+	history > $LogDir/$os_dir/history.txt
 	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
 fi
 
