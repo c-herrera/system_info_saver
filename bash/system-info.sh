@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 # File          : system-info.sh
 # Purpose       : Gather as much system info as possible
 # Description   : Script will try to get as much system data as posible and save
@@ -27,9 +27,9 @@ distroshortname=1
 distrovar=1
 distrotype=1
 currenthost=$(cat /etc/hostname)
-LogDir=sut_Info_$(date +%Y_%m_%d_%H_%M_%S)
+LogDir=sut_info_$(date +%Y_%m_%d_%H_%M_%S)
 logfile=scriptlog.txt
-version="0.0.5"
+version="0.0.6"
 errorlog=$LogDir/errors.txt
 
 #script folders
@@ -58,6 +58,20 @@ function RunCmdandLog() {
 		$1 $2 >> $3/$4
 		echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $1 done ] " >> $3/$4
 	fi
+}
+
+function logHeader() {
+	#to screen
+	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $2 running ] "
+	#to log
+	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $2 running ] " >> $1  
+}
+
+function logFooter() {
+	#to screen
+	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $2 done ] "
+	#to log
+	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $2 done ] " >> $1  
 }
 
 #System info banner
@@ -136,6 +150,7 @@ function OS_detect() {
 function folderSetup(){
 	mkdir --parents $LogDir/$hw_dir
 	mkdir --parents $LogDir/$os_dir
+	mkdir --parents $LogDir/$os_dir/etc/
 	mkdir --parents $LogDir/$net_dir
 	mkdir --parents $LogDir/$power_dir
 	mkdir --parents $LogDir/$storage_dir
@@ -163,7 +178,6 @@ if  [ -d "$LogDir" ]
 then
 	echo "$LogDir directory exists, will continue"
 	touch $LogDir/$logfile
-	systembanner
 	systembanner >> $LogDir/$logfile
 	echo "" >> $LogDir/$logfile
 	date >> $LogDir/$logfile
@@ -173,7 +187,6 @@ else
 	echo "$LogDir directory not found, creating one"
 	mkdir $LogDir
 	touch $LogDir/$logfile
-	systembanner
 	systembanner >> $LogDir/$logfile
 	echo "" >> $LogDir/$logfile
 	# Create folder for logs
@@ -209,222 +222,165 @@ echo "- Process started at $(date +%Y:%m:%d:%H:%M:%S) " >> $LogDir/$logfile
 # Hardware logs section
 echo "- Hardware section starts :" >> $LogDir/$logfile
 
-stringcommand=lshw
-
 if [ -x "$(command -v lshw)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "lshw command"
 	lshw -html > $LogDir/$hw_dir/lshw-system-info.html
 	lshw -short >$LogDir/$hw_dir/lshw-system-info-brief.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "lshw command"
 fi
-
-stringcommand=hwinfo
 
 if [ -x "$(command -v hwinfo)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "hwinfo"
 	hwinfo --all --log=$LogDir/$hw_dir/hwinfo-log.txt
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "hwinfo"
 fi
 
-stringcommand=dmidecode
 
 if [ -x "$(command -v dmidecode)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "dmidecode"
 	dmidecode > $LogDir/$hw_dir/dmidecode-system-dmi-full-hw.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "dmidecode"
 fi
 
-stringcommand=lspci
 
 if [ -x "$(command -v lspci)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "lspci"
 	lspci -t -vmm > $LogDir/$hw_dir/lspci-pci-devices-topology-verbose.log
 	lspci -vvvxxx > $LogDir/$hw_dir/lspci-pci-devices-extra-Verbose.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "lspci"
 fi
 
-stringcommand=lscpu
-
-
 if [ -x "$(command -v lscpu)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "lscpu"
 	lscpu > $LogDir/$hw_dir/lscpu-cpu-basic.log
 	lscpu --extended --all | column -t > $LogDir/$hw_dir/lscpu-cpu-extended.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "lscpu"
 fi 
 
-stringcommand="processor info /proc/cpuinfo"
-
 if [ -f /proc/cpuinfo  ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "processor info"
 	cat /proc/cpuinfo > $LogDir/$hw_dir/cpuinfo.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "lscpu"
 fi
 
 echo "- Hardware section ends " >> $LogDir/$logfile
 
-
 # Storage logs section
-
 echo "- Storage section begins " >> $LogDir/$logfile
-stringcommand=lsblk
 if [ -f /proc/cpuinfo  ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "lsblk"
 	lsblk --all --ascii --perms --fs > $LogDir/$storage_dir/lsblk-block-devices.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "lsblk"
 fi 
 
-stringcommand=lsscsi
 if [ -x "$(command -v lsscsi)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "lsscsi"
 	lsscsi --size --verbose | column -t > $LogDir/$storage_dir/lsssci-scsi-devices-verbose.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "lsscsi"
 fi
 
-stringcommand=fdisk
 if [ -x "$(command -v fdisk)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "fdisk"
 	fdisk -l > $LogDir/$storage_dir/fdisk-fs-sys.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "fdisk"
 fi
 
-stringcommand=df
 if [ -x "$(command -v df)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "df"
 	df -h > $LogDir/$storage_dir/df-disk-usage.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "df"
 fi
 
-stringcommand="Partition specs"
 if [ -f /proc/partitions  ];then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "partition file"
 	cat /proc/partitions > $LogDir/$storage_dir/partitions.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "partition file"
 fi
 
-stringcommand="mounted partitions"
 if [ -x "$(command -v mount)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "mounted active partitions"
 	mount | column -t > $LogDir/$storage_dir/mounted-devices.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "mounted active partitions"
 fi
 
-stringcommand=SCSI
 if [ -f /proc/scsi  ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "scsi detected devices"
 	cat /proc/scsi/scsi >> $LogDir/$storage_dir/scsi_devices.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "scsi detected devices"
 fi
 
-stringcommand="SCSSI Mounts"
 if [ -f /proc/scsi/mounts ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "SCSI mounted devices"
 	cat /proc/scsi/mounts >> $LogDir/$storage_dir/scsi-mounts.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "scsi mounted devices"
 fi
 
-stringcommand=DiskStats
 if [ -f /proc/diskstats ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "Disk statistics"
 	cat /proc/diskstats | column -t >> $LogDir/$storage_dir/linux_diskstats.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "Disk statistics"
 fi
-
 echo "- Storage section ends " >> $LogDir/$logfile
 
 #IO section
-
 echo "- IO section begins " >> $LogDir/$logfile
 
-stringcommand=IOPORTS
 if [ -f /proc/ioports ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "IO Ports"
 	cat /proc/ioports > $LogDir/$io_dir/ioports.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "IO Ports"
 fi 
 
-stringcommand=LSUSB
 if [ -x "$(command -v lsusb)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "lsusb"
 	lsusb -t > $LogDir/$hw_dir/lsusb-usb-devices-topology.log
 	lsusb > $LogDir/$hw_dir/lsusb-usb-devices-normal.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "lsusb"
 fi
 
-stringcommand=SoftwareIRQ
 if [ -f /proc/softirqs ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "Software IRQs"
 	cat /proc/softirqs > $LogDir/$hw_dir/softirqs.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "Software IRQs"
 fi
-
 echo "- IO section ends " >> $LogDir/$logfile
 
 #Memory section
-
 echo "- Memory section begins " >> $LogDir/$logfile
-stringcommand=PAGETYPEINFO
 if [ -f /proc/pagetypeinfo ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "Memory Pagetype"
 	cat /proc/pagetypeinfo > $LogDir/$memory_dir/pagetypeinfo.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "Memory Pagetype"
 fi
 
 stringcommand=FREEMEM
 if [ -x "$(command -v free)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "free"
 	free -m > $LogDir/$memory_dir/free-memory-usage.log
 	cat /proc/meminfo > $LogDir/$memory_dir/proc-meminfo-memory-assigned.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "free"
 fi
 
-stringcommand=IOMEM
 if [ -f /proc/iomem ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "IO mem"
 	cat /proc/iomem > $LogDir/$memory_dir/io_mem_address.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "IO mem"
 fi
-
 echo "- Memory section ends " >> $LogDir/$logfile
 
 #Modules section
-
 echo "- Modules section begins" >> $LogDir/$logfile
-stringcommand=LSMOD
+
 if [ -x "$(command -v lsmod)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "lsmod"
 	lsmod | column -t > $LogDir/$modules_dir/lsmod-modules-loaded.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "lsmod"
 fi
 
-stringcommand="System loaded modules"
 if [ -f /proc/modules ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "loaded modules"
 	cat /proc/modules | column -t > $LogDir/$modules_dir/modules.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "loaded modules"
 fi
 
 echo "- Modules section ends " >> $LogDir/$logfile
@@ -432,138 +388,100 @@ echo "- Modules section ends " >> $LogDir/$logfile
 #Power Mngt Section
 
 echo "- PowerMngt section begins" >> $LogDir/$logfile
-stringcommand=POWERDRIVER
 if [ -d /sys/devices/system/cpu ]; then 
-
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "PowerDriver state"
 	echo "CPU idle current driver :" > $LogDir/$power_dir/pwr-cstates-driver.log
 	cat /sys/devices/system/cpu/cpuidle/current_driver >> $LogDir/$power_dir/pwr-cstates-driver.log
 	echo "CPU Scaling driver :" >> $LogDir/$power_dir/pwr-cstates-driver.log
 	cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver >> $LogDir/$power_dir/pwr-cstates-driver.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "PowerDriver state"
 fi
-
 echo "- PowerMngt section ends" >> $LogDir/$logfile
+
 #Network section
 
 echo "- Network section begins" >> $LogDir/$logfile
-stringcommand="Network devices statistics"
 if [ -f /proc/net/dev ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
-	cat /proc/net/dev | column -t > $LogDir/$net_dir/network_devices_stats.log 2>> $errorlog
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "Network devices statistics"
+	cat /proc/net/dev | column -t > $LogDir/$net_dir/network_devices_stats.log
+	logFooter $LogDir/$logfile "Network devices statistics"
 fi
 
-stringcommand="Ifconfig "
 if [ -x "$(command -v ifconfig)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
-	ifconfig  > $LogDir/$net_dir/ifconfig.log 2>> $errorlog
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "ifconfig "
+	ifconfig  > $LogDir/$net_dir/ifconfig.log
+	logFooter $LogDir/$logfile "ifconfig"
 fi 
 
-stringcommand="Ip Address"
 if [ -x "$(command -v ip)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "IP address"
 	ip  addr > $LogDir/$net_dir/network_ips.log 2>> $errorlog
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "IP address"
 fi 
 
-stringcommand="Hosts conf"
 if [ -f /proc/hosts ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "Hosts conf"
 	cp /etc/hosts $LogDir/$net_dir/network_hosts 2>> $errorlog
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "Hosts conf"
 fi
 
-stringcommand="IP Route"
 if [ -x "$(command -v route)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "routes"
 	route > $LogDir/$net_dir/route.txt  2>> $errorlog
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "routes"
 fi
-
-
 echo "- Network section ends" >> $LogDir/$logfile
 
 #OS Enviroment section
-
 echo "- OS Enviroment logs" >> $LogDir/$logfile
 
-stringcommand="System version"
 if [ -f /proc/version ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "System version"
 	cat /proc/version >> $LogDir/$os_dir/os-system-version.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "System version"
 fi
 
-pause
-
-stringcommand="System messages"
 if [ -f /var/log/messages ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "System messages"
 	cp /var/log/messages $LogDir/$os_dir/messages.log 2>> $errorlog
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "System messages"
 fi
 
-stringcommand="Dmesg ..."
 if [ -x "$(command -v dmesg)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "dmesg"
 	dmesg --level=warn > $LogDir/$os_dir/dmesg-warnings.log
 	dmesg --level=err > $LogDir/$os_dir/dmesg-errors.log
 	dmesg --level=crit > $LogDir/$os_dir/dmesg-critial.log
 	dmesg --level=debug > $LogDir/$os_dir/dmesg-debug.log
 	dmesg > $LogDir/$os_dir/dmesg.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "dmesg"
 fi
 
-
-stringcommand="OS Boot commandline"
 if [ -f /proc/cmdline ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "OS Boot commandline"
 	cat /proc/cmdline > $LogDir/$os_dir/linux_os_boot_line.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "OS Boot commandline"
 fi
 
-
-stringcommand="OS Cryptography"
 if [ -f /proc/crypto ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "OS Cryptography"
 	cat /proc/crypto > $LogDir/$os_dir/linux_os_crypto.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "OS Cryptography"
 fi
 
-
-stringcommand="System units"
 if [ -x "$(command -v systemctl)" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+	logHeader $LogDir/$logfile "System units"
 	systemctl list-unit-files > $LogDir/$os_dir/system_units.log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "System units"
 fi
 
-stringcommand="Modules conf"
 if [ -d "/etc/modprobe.d" ]; then 
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
-	mkdir --parents $LogDir/$os_dir/etc/
+	logHeader $LogDir/$logfile "Modules comfig"
 	cp -R /etc/modprobe.d* $LogDir/$os_dir/etc/ 2>> $errorlog
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "Modules config"
 fi
 
-stringcommand="Driver modules info"
-echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+logHeader $LogDir/$logfile "Driver modules info"
 if [ -f $LogDir/$os_dir/drivers.txt ]; then 
 	rm $LogDir/$os_dir/drivers.txt; 
 fi
@@ -582,12 +500,10 @@ do
 		continue
 	fi
 done
-echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+logFooter $LogDir/$logfile "Driver modules info"
 
 
-stringcommand="OS Packages info"
-echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
+logHeader $LogDir/$logfile "OS Packages info"
 if [ -x "$(command -v yum)" ]; then 
 	yum list all > $LogDir/$os_dir/yum_list_all_pkgs.log
 	yum list installed > $LogDir/$os_dir/yum_list_only_installed_pkgs.log
@@ -597,29 +513,27 @@ fi
 if [ -x "$(command -v zypper)" ]; then 
 	zypper pa > $LogDir/$os_dir/zypper_pkgs_avail.log
 	rpm -qa | sort > $LogDir/$os_dir/installed_rpms.txt
+	rpm -qa --last | sort >> $LogDir/$os_dir/installed_rpms_history.log
 fi
 
 if [ -x "$(command -v apt-get)" ]; then 
 	echo "0"
 fi
-echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+logFooter $LogDir/$logfile "OS Packages info"
 
-
-stringcommand="OS command history"
-echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] "
-echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand running ] " >> $LogDir/$logfile
 if [ -x "$(command -v history)" ]; then 
+	logHeader $LogDir/$logfile "OS Packages info"
 	history > $LogDir/$os_dir/history.txt
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $stringcommand done ] " >> $LogDir/$logfile
+	logFooter $LogDir/$logfile "OS command history"
 fi
 
+if [ -x "$(command -v ps)" ]; then
+	logHeader $LogDir/$logfile "Current process tree"
+	ps aux --forest >  $LogDir/$os_dir/ps_tree.log
+	logFooter $LogDir/$logfile "Current process tree"
+fi
 
 echo "- OS Enviroment logs ends" >> $LogDir/$logfile
-
-
-
-
-
 # end 
 echo "Script is done, you may want to check the logs on ${LogDir} "
 echo "End time : " >> $LogDir/$logfile
