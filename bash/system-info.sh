@@ -521,9 +521,9 @@ if [ -x "$(command -v apt-get)" ]; then
 fi
 logFooter $LogDir/$logfile "OS Packages info"
 
-if [ -x "$(command -v history)" ]; then 
-	logHeader $LogDir/$logfile "OS Packages info"
-	history > $LogDir/$os_dir/history.txt
+if [ -x "$(command -v /bin/bash)" ]; then 
+	logHeader $LogDir/$logfile "OS command history"
+	history > $LogDir/$os_dir/history.log
 	logFooter $LogDir/$logfile "OS command history"
 fi
 
