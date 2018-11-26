@@ -4,7 +4,7 @@
 # Description   : Script will try to get as much system data as posible and save
 #                 it a single location where user can pick and seek for whatever
 #                 is required
-# Version       : 0.0.7
+# Version       : 0.0.8
 # Date          : 2018-11-18-21:18
 # Created by    : Carlos Herrera.
 # Notes         : To run type sh system-info.sh in a system terminal with root access.
@@ -14,7 +14,7 @@
 
 # Fun times on errors!
 set +x
-# set otherwise for fun !!!
+# set otherwise on for fun !!!
 
 
 # Setting some vars to use :
@@ -29,12 +29,11 @@ distrotype=1
 currenthost=$(cat /etc/hostname)
 LogDir=sut_info_$(date +%Y_%m_%d_%H_%M_%S)
 logfile=scriptlog.txt
-version="0.0.7"
+version="0.0.8"
 errorlog=$LogDir/errors.txt
 htmllog=$LogDir/scriptlog.html
 
 #script folders
-
 hw_dir=hw_logs
 os_dir=os_logs
 net_dir=net_logs
@@ -54,34 +53,46 @@ function pause(){
 # Prototype 1 command 2 arguments (opt) 3 path to save 4 log filename
 function RunCmdandLog() {
 	if [ -n "$(command -v $1)" ]; then
-		echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $1 running ] "
-		echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $1 running ] " >> $3/$4
+		echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $1 running now ] "
+		echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $1 running now ] " >> $3/$4
 		$1 $2 >> $3/$4
-		echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $1 done ] " >> $3/$4
+		echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $1 not running ] " >> $3/$4
 	fi
+}
+
+function logHTMLHeader() {
+	echo "<html> <head> </head> <body> <table>" >> $htmllog
+}
+
+function logHTMLFooter() { 
+	echo "</table> </body> </html>" >> $htmllog
 }
 
 function logHeader() {
 	#to screen
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $2 running ] "
+	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $2 running now  ] "
 	#to log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $2 running ] " >> $1  
-	echo "<tr><td> $2 begins </td></tr>" >> $htmllog
+	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $2 running now  ] " >> $1  
+	echo "<tr><td> $2  </td></tr>" >> $htmllog
 }
 
 function logFooter() {
 	#to screen
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $2 done ] "
+	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $2 not running ] "
 	#to log
-	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $2 done ] " >> $1  
-	echo "<tr><td> $2 ends </td></tr>" >> $htmllog
+	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $2 not running ] " >> $1  
+	echo "<tr><td> $2  </td> <td> $(time -f "Elapsed Time = %E, Inputs %I, Outputs %O") </td> " >> $htmllog
 }
 
 function logFileStubbSection() {
 	echo $3
 	echo $3 >> $1
 	echo "--Files for this section  are :" >> $1
-	echo " - $(ls $2)"  >> $1
+	echo "-----------------------------------------" >> $1
+	echo "$(ls $2)"  >> $1
+	echo "-----------------------------------------" >> $1
+	echo "<td> <p> Files </p>  $(ls $2) </td> </tr>" >> $htmllog
+
  }
 
 #System info banner
@@ -221,14 +232,11 @@ fi
 systembanner
 
 # Annnnd proceed with the script ...
+
 echo "- Starting the recolletion " >> $LogDir/$logfile
 echo "- Process started at $(date +%Y:%m:%d:%H:%M:%S) " >> $LogDir/$logfile
 
-#RunandLog lshw -html $LogDir/$hw_dir/ lshw_system-specs.html
-#RunandLog lshw -short $LogDir/$hw_dir/ lshw_system-info.html
-#RunandLog hwinfo "-all --log=$LogDir/$hw_dir/hwinfo.log" $LogDir/$hw_dir/hwinfodone.log
-#pause
-
+logHTMLHeader
 
 # Hardware logs section
 echo "- Hardware section starts :" >> $LogDir/$logfile
@@ -280,10 +288,18 @@ if [ -f /proc/schedstat ]; then
 	logFooter $LogDir/$logfile "CPU Schedule"
 fi
 
+
 if [ -f /var/log/xorg.0.log ]; then 
 	logHeader $LogDir/$logfile "x Server Details"
 	cp /var/log/xorg.0.log $LogDir/$hw_dir/ 2>> $errorlog
 	logFooter $LogDir/$logfile "X Server Details"
+fi
+
+
+if [ -f /proc/devices ]; then 
+	logHeader $LogDir/$logfile "Devices list"
+	cp /proc/devices $LogDir/$hw_dir/ 2>> $errorlog
+	logFooter $LogDir/$logfile "Devices list :"
 fi
 
 logFileStubbSection $LogDir/$logfile $LogDir/$hw_dir/ "- Hardware section ends "
@@ -388,6 +404,12 @@ if [ -f /proc/softirqs ]; then
 	logFooter $LogDir/$logfile "Software IRQs"
 fi
 
+if [ -f /proc/interrupts ]; then 
+	logHeader $LogDir/$logfile "IRQS"
+	cat /proc/interupts > $LogDir/$io_dir/interrupts.log
+	logFooter $LogDir/$logfile "IRQs"
+fi
+
 logFileStubbSection $LogDir/$logfile $LogDir/$io_dir/ "- IO section ends "
 
 #Memory section
@@ -418,7 +440,7 @@ if [ -f /proc/vmalloc ]; then
 	logFooter $LogDir/$logfile "Allocation Memory"
 fi
 
-echo "- Memory section ends " >> $LogDir/$logfile
+logFileStubbSection $LogDir/$logfile $LogDir/$memory_dir/ "- Memory section ends "
 
 #Modules section
 echo "- Modules section begins" >> $LogDir/$logfile
@@ -435,7 +457,7 @@ if [ -f /proc/modules ]; then
 	logFooter $LogDir/$logfile "loaded modules"
 fi
 
-echo "- Modules section ends " >> $LogDir/$logfile
+logFileStubbSection $LogDir/$logfile $LogDir/$modules_dir "- Modules section ends "
 
 #Power Mngt Section
 
@@ -448,10 +470,10 @@ if [ -d /sys/devices/system/cpu ]; then
 	cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver >> $LogDir/$power_dir/pwr-cstates-driver.log
 	logFooter $LogDir/$logfile "PowerDriver state"
 fi
-echo "- PowerMngt section ends" >> $LogDir/$logfile
+
+logFileStubbSection $LogDir/$logfile $LogDir/$power_dir/ "- PowerMngt section ends"
 
 #Network section
-
 echo "- Network section begins" >> $LogDir/$logfile
 if [ -f /proc/net/dev ]; then 
 	logHeader $LogDir/$logfile "Network devices statistics"
@@ -468,7 +490,7 @@ fi
 if [ -x "$(command -v ip)" ]; then 
 	logHeader $LogDir/$logfile "IP address"
 	ip  addr > $LogDir/$net_dir/network_ip_generic.log
-	ip addr -stats > > $LogDir/$net_dir/network_ip_stats.log
+	ip addr -stats >> $LogDir/$net_dir/network_ip_stats.log
 	logFooter $LogDir/$logfile "IP address"
 fi 
 
@@ -484,7 +506,7 @@ if [ -x "$(command -v route)" ]; then
 	logFooter $LogDir/$logfile "routes"
 fi
 
-echo "- Network section ends" >> $LogDir/$logfile
+logFileStubbSection $LogDir/$logfile $LogDir/$net_dir/ "- Network section ends"
 
 #OS Enviroment section
 echo "- OS Enviroment logs" >> $LogDir/$logfile
@@ -604,8 +626,23 @@ if [ -x "$(command -v ps)" ]; then
 	logFooter $LogDir/$logfile "Current process tree"
 fi
 
-echo "- OS Enviroment logs ends" >> $LogDir/$logfile
+if [ -f /proc/stat ]; then 
+	logHeader $LogDir/$logfile "System stats"
+	cat /proc/stat > $LogDir/$os_dir/sys_stats.log
+	logFooter $LogDir/$logfile "System stats"
+fi
 
+
+if [ -f /proc/fb ]; then 
+	logHeader $LogDir/$logfile "Frame buffer"
+	cat /proc/fb > $LogDir/$os_dir/sys_stats.log
+	logFooter $LogDir/$logfile "Frame Buffer"
+fi
+
+
+logFileStubbSection $LogDir/$logfile $LogDir/$os_dir/ "- OS Enviroment logs ends"
+
+logHTMLFooter
 # end 
 echo "Script is done, you may want to check the logs on ${LogDir} "
 echo "End time : " >> $LogDir/$logfile
