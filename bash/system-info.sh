@@ -81,7 +81,7 @@ function logFooter() {
 	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $2 not running ] "
 	#to log
 	echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $2 not running ] " >> $1  
-	echo "<tr><td> $2  </td> <td> $(time -f "Elapsed Time = %E, Inputs %I, Outputs %O") </td> " >> $htmllog
+	echo "<tr><td> $2  </td> <td> saved in $1 </td> </tr>" >> $htmllog
 }
 
 function logFileStubbSection() {
@@ -91,7 +91,7 @@ function logFileStubbSection() {
 	echo "-----------------------------------------" >> $1
 	echo "$(ls $2)"  >> $1
 	echo "-----------------------------------------" >> $1
-	echo "<td> <p> Files </p>  $(ls $2) </td> </tr>" >> $htmllog
+	echo "<tr><td> <p> Files </p></td> <td> $(ls $2) </td> </tr>" >> $htmllog
 
  }
 
@@ -216,17 +216,17 @@ else
 	folderSetup
 fi
 
-# Get rid of all the term clutter
-clear
-
 # Checking this does not hurt
 if [ -d  "/bin" ]
 then 
-	echo "main directory BIN is present continue ..."
+	echo "main directory BIN is present continue ..." >> $LogDir/$logfile
 else
-	echo "BIN directory is not present at // bailing out..."
+	echo "BIN directory is not present at // bailing out..." >> $LogDir/$errorlog
 	exit 1
 fi
+
+# Get rid of all the term clutter
+clear
 
 # A nice introduction ....
 systembanner
@@ -278,13 +278,13 @@ fi
 
 if [ -f /proc/cpuinfo  ]; then 
 	logHeader $LogDir/$logfile "processor info"
-	cat /proc/cpuinfo > $LogDir/$hw_dir/cpuinfo.log
+	cp /proc/cpuinfo $LogDir/$hw_dir/cpuinfo.log 2>> $errorlog
 	logFooter $LogDir/$logfile "lscpu"
 fi
 
 if [ -f /proc/schedstat ]; then 
 	logHeader $LogDir/$logfile "CPU Schedule"
-	cat /proc/schedstat >> $LogDir/$hw_dir/cpu_schedule.log
+	cp /proc/schedstat $LogDir/$hw_dir/cpu_schedule.log 2>>$errorlog
 	logFooter $LogDir/$logfile "CPU Schedule"
 fi
 
@@ -332,7 +332,7 @@ fi
 
 if [ -f /proc/partitions  ];then 
 	logHeader $LogDir/$logfile "partition file"
-	cat /proc/partitions > $LogDir/$storage_dir/partitions.log
+	cp /proc/partitions $LogDir/$storage_dir/partitions.log 2>> $errorlog
 	logFooter $LogDir/$logfile "partition file"
 fi
 
@@ -490,7 +490,7 @@ fi
 if [ -x "$(command -v ip)" ]; then 
 	logHeader $LogDir/$logfile "IP address"
 	ip  addr > $LogDir/$net_dir/network_ip_generic.log
-	ip addr -stats >> $LogDir/$net_dir/network_ip_stats.log
+	ip addr  -s >> $LogDir/$net_dir/network_ip_stats.log
 	logFooter $LogDir/$logfile "IP address"
 fi 
 
