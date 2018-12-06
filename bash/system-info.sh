@@ -4,7 +4,7 @@
 # Description   : Script will try to get as much system data as posible and save
 #                 it a single location where user can pick and seek for whatever
 #                 is required
-# Version       : 0.0.9
+# Version       : 0.1.10
 # Date          : 2018-11-18-21:18
 # Created by    : Carlos Herrera.
 # Notes         : To run type sh system-info.sh in a system terminal with root access.
@@ -25,6 +25,7 @@ distroname=1
 distroshortname=1
 distrovar=1
 distrotype=1
+extension=.txt
 currenthost=$(cat /etc/hostname)
 LogDir=sut_info_$(date +%Y_%m_%d_%H_%M_%S)
 logfile=scriptlog.txt
@@ -249,61 +250,61 @@ echo "- Hardware section starts :" >> $LogDir/$logfile
 if [ -x "$(command -v lshw)" ]; then 
 	logHeader $LogDir/$logfile "-HW : lshw"
 	lshw -html > $LogDir/$hw_dir/lshw-system-info.html
-	lshw -short >$LogDir/$hw_dir/lshw-system-info-brief.txt
+	lshw -short >$LogDir/$hw_dir/lshw-system-info-brief$extension
 	logFooter $LogDir/$logfile "-" $LogDir/$hw_dir/
 fi
 
 if [ -x "$(command -v hwinfo)" ]; then 
 	logHeader $LogDir/$logfile "-HW : hwinfo"
-	hwinfo --all --log=$LogDir/$hw_dir/hwinfo.txt
+	hwinfo --all --log=$LogDir/$hw_dir/hwinfo$extension
 	logFooter $LogDir/$logfile "-" $LogDir/$hw_dir/
 fi
 
 
 if [ -x "$(command -v dmidecode)" ]; then 
 	logHeader $LogDir/$logfile "-HW : dmidecode"
-	dmidecode > $LogDir/$hw_dir/dmidecode-system-dmi-full-hw.txt
+	dmidecode > $LogDir/$hw_dir/dmidecode-system-dmi-full-hw$extension
 	logFooter $LogDir/$logfile "-" $LogDir/$hw_dir/
 fi
 
 
 if [ -x "$(command -v lspci)" ]; then 
 	logHeader $LogDir/$logfile "-HW : lspci"
-	lspci -t -vmm > $LogDir/$hw_dir/lspci-pci-devices-topology-verbose.txt
-	lspci -vvvxxx > $LogDir/$hw_dir/lspci-pci-devices-extra-verbose.txt
+	lspci -t -vmm > $LogDir/$hw_dir/lspci-pci-devices-topology-verbose$extension
+	lspci -vvvxxx > $LogDir/$hw_dir/lspci-pci-devices-extra-verbose$extension
 	logFooter $LogDir/$logfile "-" $LogDir/$hw_dir/
 fi
 
 if [ -x "$(command -v lscpu)" ]; then 
 	logHeader $LogDir/$logfile "-HW : lscpu"
-	lscpu > $LogDir/$hw_dir/lscpu-cpu-basic.txt
-	lscpu --extended --all | column -t > $LogDir/$hw_dir/lscpu-extended.txt
+	lscpu > $LogDir/$hw_dir/lscpu-cpu-basic$extension
+	lscpu --extended --all | column -t > $LogDir/$hw_dir/lscpu-extended$extension
 	logFooter $LogDir/$logfile "-" $LogDir/$hw_dir/
 fi 
 
 if [ -f /proc/cpuinfo  ]; then 
 	logHeader $LogDir/$logfile "-HW : lspcpu"
-	cp /proc/cpuinfo $LogDir/$hw_dir/cpuinfo.txt 2>> $errorlog
+	cp /proc/cpuinfo $LogDir/$hw_dir/cpuinfo$extension 2>> $errorlog
 	logFooter $LogDir/$logfile "-" $LogDir/$hw_dir/
 fi
 
 if [ -f /proc/schedstat ]; then 
 	logHeader $LogDir/$logfile "-HW : cpu schedule"
-	cp /proc/schedstat $LogDir/$hw_dir/cpu_schedule.txt 2>>$errorlog
+	cp /proc/schedstat $LogDir/$hw_dir/cpu_schedule$extension 2>>$errorlog
 	logFooter $LogDir/$logfile "-" $LogDir/$hw_dir/
 fi
 
 
-if [ -f /var/log/xorg.0.txt ]; then 
+if [ -f /var/log/xorg.0$extension ]; then 
 	logHeader $LogDir/$logfile "HW : x-server"
-	cp /var/log/xorg.0.txt $LogDir/$hw_dir/ 2>> $errorlog
+	cp /var/log/xorg.0$extension $LogDir/$hw_dir/ 2>> $errorlog
 	logFooter $LogDir/$logfile "-" $LogDir/$hw_dir/
 fi
 
 
 if [ -f /proc/devices ]; then 
 	logHeader $LogDir/$logfile "-HW : devices"
-	cp /proc/devices $LogDir/$hw_dir/devices.txt 2>> $errorlog
+	cp /proc/devices $LogDir/$hw_dir/devices$extension 2>> $errorlog
 	logFooter $LogDir/$logfile "-" $LogDir/$hw_dir/
 fi
 
@@ -313,74 +314,74 @@ logFileStubbSection $LogDir/$logfile $LogDir/$hw_dir/ "- HW.Section.End " $hw_di
 echo "- Storage section begins " >> $LogDir/$logfile
 if [ -f /proc/cpuinfo  ]; then 
 	logHeader $LogDir/$logfile "-STRG : lsblk"
-	lsblk --all --ascii --perms --fs > $LogDir/$storage_dir/lsblk.txt
+	lsblk --all --ascii --perms --fs > $LogDir/$storage_dir/lsblk$extension
 	logFooter $LogDir/$logfile "-" $LogDir/$storage_dir/
 fi 
 
 if [ -x "$(command -v lsscsi)" ]; then 
 	logHeader $LogDir/$logfile "-STRG : lsscsi"
-	lsscsi --size --verbose | column -t > $LogDir/$storage_dir/lsssci-verbose.txt
+	lsscsi --size --verbose | column -t > $LogDir/$storage_dir/lsssci-verbose$extension
 	logFooter $LogDir/$logfile "lsscsi" $LogDir/$storage_dir/
 fi
 
 if [ -x "$(command -v fdisk)" ]; then 
 	logHeader $LogDir/$logfile "-STRG : fdisk"
-	fdisk -l > $LogDir/$storage_dir/fdisk.txt
+	fdisk -l > $LogDir/$storage_dir/fdisk$extension
 	logFooter $LogDir/$logfile "-" $LogDir/$storage_dir/
 fi
 
 if [ -x "$(command -v df)" ]; then 
 	logHeader $LogDir/$logfile "-STRG : df"
-	df -h > $LogDir/$storage_dir/df-usage.txt
+	df -h > $LogDir/$storage_dir/df-usage$extension
 	logFooter $LogDir/$logfile "-" $LogDir/$storage_dir/
 fi
 
 if [ -f /proc/partitions  ];then 
 	logHeader $LogDir/$logfile "-STRG : partition file"
-	cp /proc/partitions $LogDir/$storage_dir/partitions.txt 2>> $errorlog
+	cp /proc/partitions $LogDir/$storage_dir/partitions$extension 2>> $errorlog
 	logFooter $LogDir/$logfile "-" $LogDir/$storage_dir/
 fi
 
 if [ -x "$(command -v mount)" ]; then 
 	logHeader $LogDir/$logfile "STRG : mount"
-	mount | column -t > $LogDir/$storage_dir/mounted_devices.txt
+	mount | column -t > $LogDir/$storage_dir/mounted_devices$extension
 	logFooter $LogDir/$logfile "-" $LogDir/$storage_dir/
 fi
 
 if [ -f /proc/scsi  ]; then 
 	logHeader $LogDir/$logfile "STRG : scsi"
-	cat /proc/scsi/scsi >> $LogDir/$storage_dir/scsi_devices.txt
+	cat /proc/scsi/scsi >> $LogDir/$storage_dir/scsi_devices$extension
 	logFooter $LogDir/$logfile "-" $LogDir/$storage_dir/
 fi
 
 if [ -f /proc/scsi/mounts ]; then 
 	logHeader $LogDir/$logfile "STRG : scsi-mounts"
-	cp /proc/scsi/mounts  $LogDir/$storage_dir/scsi-mounts.txt 2>>$errorlog
+	cp /proc/scsi/mounts  $LogDir/$storage_dir/scsi-mounts$extension 2>>$errorlog
 	logFooter $LogDir/$logfile "-" $LogDir/$storage_dir/
 fi
 
 if [ -f /proc/diskstats ]; then 
 	logHeader $LogDir/$logfile "STRG : diskstats"
-	cat /proc/diskstats | column -t >> $LogDir/$storage_dir/diskstats.txt
+	cat /proc/diskstats | column -t >> $LogDir/$storage_dir/diskstats$extension
 	logFooter $LogDir/$logfile "-" $LogDir/$storage_dir/
 fi
 
 if [ -f /proc/filesystems ]; then 
 	logHeader $LogDir/$logfile "STRG : filesystems"
-	cat /proc/filesystems >> $LogDir/$storage_dir/fs_systems.txt
+	cp /proc/filesystems  $LogDir/$storage_dir/fs_systems$extension 2>>$errorlog
 	logFooter $LogDir/$logfile "-" $LogDir/$storage_dir/
 fi
 
 
 if [ -x "$(command -v blockdev)" ]; then 
 	logHeader $LogDir/$logfile "STRG : blockdev"
-	blockdev --report  >> $LogDir/$storage_dir/blockdevices.txt
+	blockdev --report  >> $LogDir/$storage_dir/blockdevices$extension
 	logFooter $LogDir/$logfile "-" $LogDir/$storage_dir/
 fi
 
 if [ -x "$(command -v swapon)" ]; then 
 	logHeader $LogDir/$logfile "-STRG : swaps"
-	swapon --all --summary --verbose  >> $LogDir/$storage_dir/blockdevices.txt
+	swapon --all --summary --verbose  >> $LogDir/$storage_dir/swaps$extension
 	logFooter $LogDir/$logfile "-" $LogDir/$storage_dir/
 fi
 
@@ -392,27 +393,27 @@ echo "- IO section begins " >> $LogDir/$logfile
 
 if [ -f /proc/ioports ]; then 
 	logHeader $LogDir/$logfile "-IO : ioports"
-	cp /proc/ioports  $LogDir/$io_dir/io_ports.txt 2>>$errorlog
+	cp /proc/ioports  $LogDir/$io_dir/io_ports$extension 2>>$errorlog
 	logFooter $LogDir/$logfile "-" $LogDir/$io_dir
 fi 
 
 if [ -x "$(command -v lsusb)" ]; then 
 	logHeader $LogDir/$logfile "-IO : lsusb"
-	lsusb -t > $LogDir/$io_dir/lsusb_topology.txt
-	lsusb > $LogDir/$io_dir/lsusb_normal.txt
+	lsusb -t > $LogDir/$io_dir/lsusb_topology$extension
+	lsusb > $LogDir/$io_dir/lsusb_normal$extension
 	logFooter $LogDir/$logfile "-" $LogDir/$io_dir
 fi
 
 if [ -f /proc/softirqs ]; then 
 	logHeader $LogDir/$logfile "-IO : softirqs"
-	cp /proc/softirqs  $LogDir/$io_dir/soft_irqs.txt 2>>$errorlog
+	cp /proc/softirqs  $LogDir/$io_dir/soft_irqs$extension 2>>$errorlog
 	logFooter $LogDir/$logfile "-" $LogDir/$io_dir
 fi
 
 if [ -f /proc/interrupts ]; then 
-	logHeader $LogDir/$logfile "-IO : irqs"
-	cp /proc/interrupts  $LogDir/$io_dir/interrupts.txt 2>>$errorlog
-	logFooter $LogDir/$logfile "-" $LogDir/$io_dir
+	logHeader $LogDir/$logfile "IRQS"
+	cat /proc/interupts > $LogDir/$io_dir/interrupts$extension
+	logFooter $LogDir/$logfile "IRQs" $LogDir/$io_dir
 fi
 
 logFileStubbSection $LogDir/$logfile $LogDir/$io_dir/ "- IO section ends " $io_dir
@@ -421,27 +422,27 @@ logFileStubbSection $LogDir/$logfile $LogDir/$io_dir/ "- IO section ends " $io_d
 echo "- Memory section begins " >> $LogDir/$logfile
 if [ -f /proc/pagetypeinfo ]; then 
 	logHeader $LogDir/$logfile "-MEM : pagetype"
-	cp /proc/pagetypeinfo  $LogDir/$memory_dir/pagetypeinfo.txt 2>>$errorlog
+	cp /proc/pagetypeinfo  $LogDir/$memory_dir/pagetypeinfo$extension 2>>$errorlog
 	logFooter $LogDir/$logfile "-" $LogDir/$memory_dir
 fi
 
 
 if [ -x "$(command -v free)" ]; then 
-	logHeader $LogDir/$logfile "-MEM : free,meminfo"
-	free --human > $LogDir/$memory_dir/memory_usage.txt
-	cp /proc/meminfo  $LogDir/$memory_dir/memory_assigned.txt 2>>$errorlog
+	logHeader $LogDir/$logfile "-memory : free,meminfo"
+	free --human > $LogDir/$memory_dir/memory_usage$extension
+	cp /proc/meminfo  $LogDir/$memory_dir/memory_assigned$extension 2>>$errorlog
 	logFooter $LogDir/$logfile "free" $LogDir/$memory_dir
 fi 
 
 if [ -f /proc/iomem ]; then 
-	logHeader $LogDir/$logfile "-MEM : iomem"
-	cp /proc/iomem  $LogDir/$memory_dir/io_memory_address.txt 2>>$errorlog
+	logHeader $LogDir/$logfile "-memory : iomem"
+	cp /proc/iomem  $LogDir/$memory_dir/io_memory_address$extension 2>>$errorlog
 	logFooter $LogDir/$logfile "IO mem" $LogDir/$memory_dir
 fi
 
 if [ -f /proc/vmalloc ]; then 
-	logHeader $LogDir/$logfile "-MEM : vmalloc"
-	cp /proc/vmalloc  $LogDir/$memory_dir/os-system-version.txt 2>>$errorlog
+	logHeader $LogDir/$logfile "-memory : vmalloc"
+	cp /proc/vmalloc  $LogDir/$memory_dir/os-system-version$extension 2>>$errorlog
 	logFooter $LogDir/$logfile "Allocation Memory" $LogDir/$memory_dir
 fi
 
@@ -451,14 +452,14 @@ logFileStubbSection $LogDir/$logfile $LogDir/$memory_dir/ "- Memory section ends
 echo "- Modules section begins" >> $LogDir/$logfile
 
 if [ -x "$(command -v lsmod)" ]; then 
-	logHeader $LogDir/$logfile "lsmod"
-	lsmod | column -t > $LogDir/$modules_dir/lsmod_modules.txt
+	logHeader $LogDir/$logfile "-Modules : lsmod"
+	lsmod | column -t > $LogDir/$modules_dir/lsmod_modules$extension
 	logFooter $LogDir/$logfile "lsmod" $LogDir/$modules_dir
 fi
 
 if [ -f /proc/modules ]; then 
-	logHeader $LogDir/$logfile "loaded modules"
-	cat /proc/modules | column -t > $LogDir/$modules_dir/modules.txt
+	logHeader $LogDir/$logfile "Modules : modules"
+	cat /proc/modules | column -t > $LogDir/$modules_dir/modules$extension
 	logFooter $LogDir/$logfile "loaded modules" $LogDir/$modules_dir
 fi
 
@@ -468,12 +469,12 @@ logFileStubbSection $LogDir/$logfile $LogDir/$modules_dir "- Modules section end
 
 echo "- PowerMngt section begins" >> $LogDir/$logfile
 if [ -d /sys/devices/system/cpu ]; then 
-	logHeader $LogDir/$logfile "PowerDriver state"
-	echo "CPU idle current driver :" > $LogDir/$power_dir/pwr-cstates-driver.txt
-	cat /sys/devices/system/cpu/cpuidle/current_driver >> $LogDir/$power_dir/pwr-cstates-driver.txt
-	echo "CPU Scaling driver :" >> $LogDir/$power_dir/pwr-cstates-driver.txt
-	cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver >> $LogDir/$power_dir/pwr-cstates-driver.txt
-	logFooter $LogDir/$logfile "PowerDriver state" $LogDir/$power_dir
+	logHeader $LogDir/$logfile "-PowerMgmt : PowerDriver state"
+	echo "CPU idle current driver :" > $LogDir/$power_dir/pwr-cstates-driver$extension
+	cat /sys/devices/system/cpu/cpuidle/current_driver >> $LogDir/$power_dir/pwr-cstates-driver$extension
+	echo "CPU Scaling driver :" >> $LogDir/$power_dir/pwr-cstates-driver$extension
+	cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver >> $LogDir/$power_dir/pwr-cstates-driver$extension
+	logFooter $LogDir/$logfile "-PowerMgmt : PowerDriver state" $LogDir/$power_dir
 fi
 
 logFileStubbSection $LogDir/$logfile $LogDir/$power_dir/ "- PowerMngt section ends" $power_dir
@@ -481,33 +482,33 @@ logFileStubbSection $LogDir/$logfile $LogDir/$power_dir/ "- PowerMngt section en
 #Network section
 echo "- Network section begins" >> $LogDir/$logfile
 if [ -f /proc/net/dev ]; then 
-	logHeader $LogDir/$logfile "Network devices statistics"
-	cat /proc/net/dev | column -t > $LogDir/$net_dir/network_devices_stats.txt
-	logFooter $LogDir/$logfile "Network devices statistics" $LogDir/$net_dir
+	logHeader $LogDir/$logfile "network : statistics"
+	cat /proc/net/dev | column -t > $LogDir/$net_dir/network_devices_stats$extension
+	logFooter $LogDir/$logfile "-" $LogDir/$net_dir
 fi
 
 if [ -x "$(command -v ifconfig)" ]; then 
-	logHeader $LogDir/$logfile "ifconfig "
-	ifconfig  > $LogDir/$net_dir/ifconfig.txt
-	logFooter $LogDir/$logfile "ifconfig" $LogDir/$net_dir
+	logHeader $LogDir/$logfile "network : ifconfig "
+	ifconfig  > $LogDir/$net_dir/ifconfig$extension
+	logFooter $LogDir/$logfile "-" $LogDir/$net_dir
 fi 
 
 if [ -x "$(command -v ip)" ]; then 
-	logHeader $LogDir/$logfile "IP address"
-	ip  addr > $LogDir/$net_dir/network_ip_generic.txt
-	logFooter $LogDir/$logfile "IP address" $LogDir/$net_dir
+	logHeader $LogDir/$logfile "network : IP"
+	ip  addr > $LogDir/$net_dir/network_ip_generic$extension
+	logFooter $LogDir/$logfile "-" $LogDir/$net_dir
 fi 
 
 if [ -f /proc/hosts ]; then 
-	logHeader $LogDir/$logfile "Hosts conf"
+	logHeader $LogDir/$logfile "network : Hosts"
 	cp /etc/hosts $LogDir/$net_dir/network_hosts
-	logFooter $LogDir/$logfile "Hosts conf" $LogDir/$net_dir
+	logFooter $LogDir/$logfile "-" $LogDir/$net_dir
 fi
 
 if [ -x "$(command -v route)" ]; then 
-	logHeader $LogDir/$logfile "routes"
+	logHeader $LogDir/$logfile "network : routes"
 	route > $LogDir/$net_dir/route.txt
-	logFooter $LogDir/$logfile "routes" $LogDir/$net_dir
+	logFooter $LogDir/$logfile "-" $LogDir/$net_dir
 fi
 
 logFileStubbSection $LogDir/$logfile $LogDir/$net_dir/ "- Network section ends" $net_dir
@@ -516,65 +517,66 @@ logFileStubbSection $LogDir/$logfile $LogDir/$net_dir/ "- Network section ends" 
 echo "- OS Enviroment logs" >> $LogDir/$logfile
 
 if [ -f /proc/swaps ]; then 
-	logHeader $LogDir/$logfile "Swap details"
-	cat /proc/swaps >> $LogDir/$os_dir/swap_details.txt
-	logFooter $LogDir/$logfile "Swap details" $LogDir/$os_dir
+	logHeader $LogDir/$logfile "system : swap info"
+	cp /proc/swaps $LogDir/$os_dir/swap_details$extension 2>>$errorlog
+	logFooter $LogDir/$logfile "-" $LogDir/$os_dir
 fi
 
 if [ -f /proc/zoneinfo ]; then 
-	logHeader $LogDir/$logfile "VM struct zone"
-	cat /proc/zoneinfo >> $LogDir/$os_dir/os_vm_zoneinfo.txt
-	logFooter $LogDir/$logfile "VM struct zone" $LogDir/$os_dir
+	logHeader $LogDir/$logfile "system : VM struct zone"
+	cp /proc/zoneinfo $LogDir/$os_dir/vm_zoneinfo$extension 2>>$errorlog
+	logFooter $LogDir/$logfile "-" $LogDir/$os_dir
 fi
 
 if [ -f /proc/version ]; then 
-	logHeader $LogDir/$logfile "System version"
-	cat /proc/version >> $LogDir/$os_dir/os-system-version.txt
-	logFooter $LogDir/$logfile "System version" $LogDir/$os_dir
+	logHeader $LogDir/$logfile "system : os version"
+	cp /proc/version  $LogDir/$os_dir/linux_version$extension 2>>$errorlog
+	logFooter $LogDir/$logfile "-" $LogDir/$os_dir
 fi
 
 if [ -f /var/log/messages ]; then 
-	logHeader $LogDir/$logfile "System messages"
-	cp /var/log/messages $LogDir/$os_dir/messages.txt
-	logFooter $LogDir/$logfile "System messages" $LogDir/$os_dir
+	logHeader $LogDir/$logfile "system : messages"
+	cp /var/log/messages $LogDir/$os_dir/messages$extension
+	logFooter $LogDir/$logfile "-" $LogDir/$os_dir
 fi
 
 if [ -x "$(command -v dmesg)" ]; then 
-	logHeader $LogDir/$logfile "dmesg"
-	dmesg --level=warn > $LogDir/$os_dir/dmesg-warnings.txt
-	dmesg --level=err > $LogDir/$os_dir/dmesg-errors.txt
-	dmesg --level=crit > $LogDir/$os_dir/dmesg-critical.txt
-	dmesg --level=debug > $LogDir/$os_dir/dmesg-debug.txt
-	dmesg > $LogDir/$os_dir/dmesg.txt
+	logHeader $LogDir/$logfile "system : dmesg"
+	dmesg --level=warn > $LogDir/$os_dir/dmesg-warnings$extension
+	dmesg --level=err > $LogDir/$os_dir/dmesg-errors$extension
+	dmesg --level=crit > $LogDir/$os_dir/dmesg-critical$extension
+	dmesg --level=debug > $LogDir/$os_dir/dmesg-debug$extension
+	dmesg > $LogDir/$os_dir/dmesg$extension
+	dmesg --human > $LogDir/$os_dir/dmesg_friendly$extension
 	cp /var/run/dmesg.boot $LogDir/$os_dir/ 2>> $errorlog
-	logFooter $LogDir/$logfile "dmesg" $LogDir/$os_dir
+	logFooter $LogDir/$logfile "-" $LogDir/$os_dir
 fi
 
 if [ -f /proc/cmdline ]; then 
-	logHeader $LogDir/$logfile "OS Boot commandline"
-	cat /proc/cmdline > $LogDir/$os_dir/linux_os_boot_line.txt
+	logHeader $LogDir/$logfile "system : boot commandline"
+	cp /proc/cmdline  $LogDir/$os_dir/linux_os_boot_line$extension 2>>$errorlog
 	logFooter $LogDir/$logfile "OS Boot commandline" $LogDir/$os_dir
 fi
 
 if [ -f /proc/crypto ]; then 
-	logHeader $LogDir/$logfile "OS Cryptography"
-	cat /proc/crypto > $LogDir/$os_dir/linux_os_crypto.txt
-	logFooter $LogDir/$logfile "OS Cryptography" $LogDir/$os_dir
+	logHeader $LogDir/$logfile "system  : OS Cryptography"
+	cp /proc/crypto  $LogDir/$os_dir/linux_os_crypto$extension >>$errorlog
+	logFooter $LogDir/$logfile "-" $LogDir/$os_dir
 fi
 
 if [ -x "$(command -v systemctl)" ]; then 
-	logHeader $LogDir/$logfile "Systemd active units"
-	systemctl list-unit-files > $LogDir/$os_dir/system_units.txt
-	logFooter $LogDir/$logfile "Systemd active units" $LogDir/$os_dir
+	logHeader $LogDir/$logfile "system : Systemd active units"
+	systemctl list-unit-files > $LogDir/$os_dir/system_units$extension
+	logFooter $LogDir/$logfile "-" $LogDir/$os_dir
 fi
 
 if [ -d "/etc/modprobe.d" ]; then 
-	logHeader $LogDir/$logfile "Modules comfig"
+	logHeader $LogDir/$logfile "system : modprob cfg"
 	cp -R /etc/modprobe.d* $LogDir/$os_dir/etc/ 2>> $errorlog
-	logFooter $LogDir/$logfile "Modules config" $LogDir/$os_dir
+	logFooter $LogDir/$logfile "-" $LogDir/$os_dir
 fi
 
-logHeader $LogDir/$logfile "Driver modules info"
+logHeader $LogDir/$logfile "system : drivers"
 if [ -f $LogDir/$os_dir/drivers.txt ]; then 
 	rm $LogDir/$os_dir/drivers.txt; 
 fi
@@ -597,54 +599,60 @@ do
 		continue
 	fi
 done
-logFooter $LogDir/$logfile "Driver modules info" $LogDir/$os_dir
+logFooter $LogDir/$logfile "-" $LogDir/$os_dir
 
 
-logHeader $LogDir/$logfile "OS Packages info"
+logHeader $LogDir/$logfile "system : OS Packages info"
 if [ -x "$(command -v yum)" ]; then 
-	yum list all -y > $LogDir/$os_dir/yum_list_all_pkgs.txt 2>> $errorlog
-	yum list installed -y > $LogDir/$os_dir/yum_list_only_installed_pkgs.txt 2>> $errorlog
+	yum list all -y > $LogDir/$os_dir/yum_list_all_pkgs$extension 2>> $errorlog
+	yum list installed -y > $LogDir/$os_dir/yum_list_only_installed_pkgs$extension 2>> $errorlog
 	rpm -qa | sort > $LogDir/$os_dir/installed_rpms.txt 2>> $errorlog
 fi 
 
 if [ -x "$(command -v zypper)" ]; then 
-	zypper pa > $LogDir/$os_dir/zypper_pkgs_avail.txt 2>> $errorlog
+	zypper pa > $LogDir/$os_dir/zypper_pkgs_avail$extension 2>> $errorlog
 	rpm -qa | sort > $LogDir/$os_dir/installed_rpms.txt 2>> $errorlog
-	rpm -qa --last | column -t | sort >> $LogDir/$os_dir/installed_rpms_history.txt 2>> $errorlog
+	rpm -qa --last | column -t | sort >> $LogDir/$os_dir/installed_rpms_history$extension 2>> $errorlog
 fi
 
 if [ -x "$(command -v apt-get)" ]; then 
 	echo "0"
 fi
-logFooter $LogDir/$logfile "OS Packages info" $LogDir/$os_dir
+logFooter $LogDir/$logfile "-" $LogDir/$os_dir
 
 if [ -x "$(command -v /bin/bash)" ]; then 
-	logHeader $LogDir/$logfile "OS command history"
-	history > $LogDir/$os_dir/history.txt 2>> $errorlog
-	logFooter $LogDir/$logfile "OS command history" $LogDir/$os_dir
+	logHeader $LogDir/$logfile "system : command history"
+	cp $HISTFILE $LogDir/$os_dir/history$extension 2>> $errorlog
+	logFooter $LogDir/$logfile "-" $LogDir/$os_dir
 fi
 
 if [ -x "$(command -v ps)" ]; then
-	logHeader $LogDir/$logfile "Current process tree"
-	ps aux --forest >  $LogDir/$os_dir/ps_tree.txt 2>> $errorlog
-	logFooter $LogDir/$logfile "Current process tree" $LogDir/$os_dir
+	logHeader $LogDir/$logfile "systemm : process tree"
+	ps aux --forest >  $LogDir/$os_dir/ps_tree$extension 2>> $errorlog
+	logFooter $LogDir/$logfile "-" $LogDir/$os_dir
 fi
 
 if [ -f /proc/stat ]; then 
-	logHeader $LogDir/$logfile "System stats"
-	cat /proc/stat > $LogDir/$os_dir/sys_stats.txt
-	logFooter $LogDir/$logfile "System stats" $LogDir/$os_dir
+	logHeader $LogDir/$logfile "-system  : stats"
+	cp /proc/stat $LogDir/$os_dir/sys_stats$extensionc 2>>$errorlog
+	logFooter $LogDir/$logfile "-" $LogDir/$os_dir
 fi
 
 
 if [ -f /proc/fb ]; then 
 	logHeader $LogDir/$logfile "Frame buffer"
-	cp /proc/fb  $LogDir/$os_dir/fb.txt 2>> $errorlog
-	logFooter $LogDir/$logfile "Frame Buffer" $LogDir/$os_dir
+	cp /proc/fb  $LogDir/$os_dir/fb$extension 2>> $errorlog
+	logFooter $LogDir/$logfile "-" $LogDir/$os_dir
 fi
-
-
 logFileStubbSection $LogDir/$logfile $LogDir/$os_dir/ "- OS Enviroment logs ends" $os_dir
+
+if [ -x "$(command -v selview)" ]; then 
+	logHeader $LogDir/$logfile "Selview"
+	selview /save $LogDir/sut_$(date +%Y_%m_%d_%H_%M_%S).sel  1>>$errorlog
+	selview /save /hex $LogDir/sut_$(date +%Y_%m_%d_%H_%M_%S)_hex.sel 1>>$errorlog
+	logFooter $LogDir/$logfile "-" $LogDir/
+	__
+fi
 
 logHTMLFooter
 # end 
