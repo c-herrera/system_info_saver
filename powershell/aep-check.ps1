@@ -4,13 +4,22 @@
 # Version    : 0.0.1
 # 
 
-$ipmctlbin = "$env:ProgramFiles\Intel\DCPMM Software\ipmctl.exe" 
+$ipmctlbin = $env:ProgramFiles + '\Intel\DCPMM Software'
 $logfile = "aep-summary.txt"
 
-"[Health.check]"
+Write-Host $ipmctlbin
+Test-Path $ipmctlbin
 
-" - Show Device"
-$ipmctlbin show -dimm | Tee-Object -FilePath ./$logfile -Append
+Write-Host "[Health.check]"
+
+Set-Location $env:ProgramFiles
+Set-Location ".\Intel"
+Set-Location .\DCPMM \Software
+
+Write-Host " - Show Device"
+./ipmctl.exe show -dimm  |  Tee-Object -Append $logfile
+
+
 
 echo - Show Device; Attribute BootStatus
 ipmctl show -d LastShutdownStatus -dimm
