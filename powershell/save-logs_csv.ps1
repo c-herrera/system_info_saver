@@ -2,6 +2,8 @@
 # Purpose    : get system event log and save to a file
 # Created on : 12-28-2018 
 # Version    : 0.0.1
+# Helps on   :
+#            : Save windows system and application event logs
 
 # var setup
 $version="0.0.1"
@@ -9,43 +11,56 @@ $systemlog="system-log.csv"
 $applicationlog="application.csv"
 $setuplog="setup.csv"
 $userselection=0
-$savefolder="events_$(Get-Date -Format yyyy_MM_HH_ss)"
+$main_folder="events"
+$savefolder="event_logs_$(Get-Date -Format yyyy_dd_MM_HH_ss)"
 $summaryfile="summary.txt"
-$menu= "Save Events", "Erase event logs", "Quit"
+$quit=0
+$menu= "Save Events", "Erase event logs", "Save system info","Quit"
 
 # Saving logs
 function event_saver()
 {
-    Write-Host "Windows event saver"
-    Write-Host "The next system logs will be saved :" 
+    Write-Host "Windows event saver :" 
+    Write-Host "Running on date " (Get-Date) 
     Write-Host "Saving System event to CSV, please wait ..." 
-    Get-EventLog -LogName "System" -ErrorAction SilentlyContinue | Export-Csv $savefolder/$systemlog
+    Get-EventLog -LogName "System" -ErrorAction SilentlyContinue | Export-Csv $main_folder/$savefolder/$systemlog
     Write-Host "Saving application  to CSV, please wait"
-    Get-EventLog -LogName "Application" -ErrorAction SilentlyContinue | Export-Csv $savefolder/$applicationlog
-    Write-Host "Saving Setup log events to CSV"
-    Get-EventLog -LogName "Setup" -ErrorAction SilentlyContinue | Export-Csv $savefolder/$setuplog
-    Write-Host "Application, System and Setup logs are saved, plase view inside the '$savefolder' folder " 
-    Read-Host -Prompt "Press enter to continue " 
+    Get-EventLog -LogName "Application" -ErrorAction SilentlyContinue | Export-Csv $main_folder/$savefolder/$applicationlog
+    Write-Host "Application, System and Setup logs are saved, please view inside the '$savefolder' folder " 
+    Read-Host -Prompt "Press enter to continue "     
 }
 
 
 #erasing logs
 function event_eraser()
 {
-    Write-Host "Windows event eraser"
-    Write-host "The next logs will be erased :"
+    Write-Host "Windows event eraser :" 
+    Write-host "Running on date :" (Get-Date) 
     Write-host "Erasing System events"
     Clear-EventLog -LogName System
     Write-Host "Erasing Application events"
     Clear-EventLog -LogName Application
+    Write-Host "Event logs erased on "  (Get-Date) 
     Read-Host -Prompt "Press enter to continue " 
 }
 
-# Create the folder
-New-Item -Path "./" -Type Directory -Name $savefolder -Force
-Get-Date | Add-Content $savefolder/$summaryfile
+#Get system info
 
-while ($userselection -ne 2)
+function saveSystemInfo()
+{
+    Write-host "Saving Windows system info"
+    Write-Host "Running on date :" (Get-Date)
+    Get-ComputerInfo -Verbose | Tee-Object $main_folder/$savefolder/Windowssysteminfo.txt
+}
+
+
+
+# Create the folder
+New-Item -Path "./" -Type Directory -Name $main_folder -Force
+New-Item -Path "./" -Type Directory -Name $main_folder/$savefolder
+Get-Date | Add-Content $main_folder/$savefolder/$summaryfile
+
+while ($userselection -ne $quit)
 {
     Clear-Host
     
@@ -54,6 +69,7 @@ while ($userselection -ne 2)
     for ($i = 0; $i -lt $menu.Length; $i++)
     {
         Write-Host "$i" $menu[$i]
+        $quit=($i).ToInt32()
     }
 
     $userselection = Read-Host -Prompt "Type you selection"
@@ -62,13 +78,18 @@ while ($userselection -ne 2)
     {
         0 
         {
-            event_saver;
+            event_saver 
             break
         }
         1
         {
-            event_eraser;
+            event_eraser 
             break        
+        }
+        2
+        {
+            saveSystemInfo
+            break
         }
     }
 
