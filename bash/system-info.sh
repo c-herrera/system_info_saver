@@ -4,7 +4,7 @@
 # Description   : Script will try to get as much system data as posible and save
 #                 it a single location where user can pick and seek for whatever
 #                 is required
-# Version       : 0.1.19
+# Version       : 0.1.21
 # Date          : 2018-11-18-21:18
 # Created by    : Carlos Herrera.
 # Notes         : To run type sh system-info.sh in a system terminal with root access.
@@ -29,9 +29,9 @@ extension=.txt
 currenthost=$(cat /etc/hostname)
 LogDir=sut_info_$(date +%Y_%m_%d_%H_%M_%S)
 logfile=summary.txt
-version="0.1.19"
-mainfolder=evidence
-platformfolder=linux
+version="0.1.21"
+mainfolder=$HOME/evidence
+platformfolder=sys_info
 target=$mainfolder/$platformfolder
 errorlog=$target/$LogDir/errors.txt
 htmllog=$target/$LogDir/log_summary.html
@@ -110,11 +110,12 @@ function systembanner() {
 	echo "System Report for $(cat /etc/hostname) ($(hostname -i | awk '{print $1}'))"
 	echo "Generated at $(date)"
 	echo "************************************************************"
-	echo " Uptime:         $(uptime)"
+	echo " Uptime: $(uptime)"
 	echo " Kernel Version: $(uname -r)"
-	echo " Load info:      $(cat /proc/loadavg)"
-	echo " Disk status:    $(df -h / | awk 'FNR == 2 {print $5 " used (" $4 " free)"}')"
-	echo " Memory status:  $(free -h | awk 'FNR == 2 {print $3 " used (" $4 " free)"}')"
+	echo " Load info: $(cat /proc/loadavg)"
+	echo " Disk status: $(df -h / | awk 'FNR == 2 {print $5 " used (" $4 " free)"}')"
+	echo " Memory status: $(free -h | awk 'FNR == 2 {print $3 " used (" $4 " free)"}')"
+	echo " Number of cpu(s): $(nproc) "
 	echo " OS : ${distroname} "
 	echo " Arch : ${arch}"
 	echo " Kernel : ${kernel}"
@@ -191,11 +192,13 @@ function folderSetup(){
 }
 
 
-
+echo "Checking for root or admin credentials"
 if [ "$EUID" -ne 0 ]
 then 
 	echo "Please run this script as root."
-	exit 1
+	exit 
+else 
+	echo "Looks Ok, .... continue"
 fi
 
 # Setting for a future command line checkup
@@ -252,11 +255,12 @@ echo "Check for bin directory ...."
 if [ -d  "/bin" ]
 then 
 	echo "main directory BIN is present continue ..." >> $target/$LogDir/$logfile
+	echo "Seems ok, continue ...."
 else
 	echo "BIN directory is not present at // bailing out..." >> $target/$LogDir/$errorlog
 	exit 1
 fi
-echo "Seems ok, continue ...."
+
 pause
 # Get rid of all the term clutter
 clear
@@ -264,7 +268,7 @@ clear
 # A nice introduction ....
 systembanner
 
-# Annnnd proceed with the script ...
+# Annnnd proceed with the script ...`
 echo "- Starting the recolletion " >> $target/$LogDir/$logfile
 echo "- Process started at $(date +%Y:%m:%d:%H:%M:%S) " >> $target/$LogDir/$logfile
 
@@ -308,7 +312,7 @@ if [ -x "$(command -v lscpu)" ]; then
 fi 
 
 if [ -f /proc/cpuinfo  ]; then 
-	logHeader $target/$LogDir/$logfile "hardware : lspcpu"
+	logHeader $target/$LogDir/$logfile "hardware : cpuinfo"
 	cp /proc/cpuinfo $target/$LogDir/$hw_dir/cpuinfo$extension 2>> $errorlog
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
 fi
@@ -339,13 +343,13 @@ logFileStubbSection $target/$LogDir/$logfile $target/$LogDir/$hw_dir/ "- hardwar
 echo "- Storage section begins " >> $target/$LogDir/$logfile
 if [ -f /proc/cpuinfo  ]; then 
 	logHeader $target/$LogDir/$logfile "storage : lsblk"
-	lsblk --all --ascii --perms --fs > $target/$LogDir/$storage_dir/lsblk$extension
+	lsblk --all --ascii --perms --fs | column --table  > $target/$LogDir/$storage_dir/lsblk$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
 fi 
 
 if [ -x "$(command -v lsscsi)" ]; then 
 	logHeader $target/$LogDir/$logfile "storage : lsscsi"
-	lsscsi --size --verbose | column -t > $target/$LogDir/$storage_dir/lsssci-verbose$extension
+	lsscsi --size --verbose | column --table > $target/$LogDir/$storage_dir/lsssci-verbose$extension
 	logFooter $target/$LogDir/$logfile "lsscsi" $target/$LogDir/$storage_dir/
 fi
 
@@ -357,7 +361,7 @@ fi
 
 if [ -x "$(command -v df)" ]; then 
 	logHeader $target/$LogDir/$logfile "storage : df"
-	df -h > $target/$LogDir/$storage_dir/df-usage$extension
+	df --human-readable > $target/$LogDir/$storage_dir/df-usage$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
 fi
 
@@ -369,7 +373,7 @@ fi
 
 if [ -x "$(command -v mount)" ]; then 
 	logHeader $target/$LogDir/$logfile "storage : mount"
-	mount | column -t > $target/$LogDir/$storage_dir/mounted_devices$extension
+	mount --verbose --show-labels | column --table > $target/$LogDir/$storage_dir/mount_cmd$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
 fi
 
@@ -387,7 +391,7 @@ fi
 
 if [ -f /proc/diskstats ]; then 
 	logHeader $target/$LogDir/$logfile "storage : diskstats"
-	cat /proc/diskstats | column -t >> $target/$LogDir/$storage_dir/diskstats$extension
+	cat /proc/diskstats | column --table >> $target/$LogDir/$storage_dir/diskstats$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
 fi
 
@@ -400,7 +404,7 @@ fi
 
 if [ -x "$(command -v blockdev)" ]; then 
 	logHeader $target/$LogDir/$logfile "storage : blockdev"
-	blockdev --report  >> $target/$LogDir/$storage_dir/blockdevices$extension
+	blockdev --report  |  column --table >> $target/$LogDir/$storage_dir/blockdevices$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
 fi
 
@@ -424,6 +428,7 @@ if [ -x "$(command -v lsusb)" ]; then
 	logHeader $target/$LogDir/$logfile "io : lsusb"
 	lsusb -t > $target/$LogDir/$io_dir/lsusb_topology$extension
 	lsusb > $target/$LogDir/$io_dir/lsusb_normal$extension
+	lsusb -v > $target/$LogDir/$io_dir/lsusb_verbose$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$io_dir
 fi
 
@@ -452,15 +457,15 @@ fi
 
 if [ -x "$(command -v free)" ]; then 
 	logHeader $target/$LogDir/$logfile "memory : free,meminfo"
-	free --human > $target/$LogDir/$memory_dir/memory_usage$extension
+	free --human --lohi --total > $target/$LogDir/$memory_dir/free_cmd$extension
 	cp /proc/meminfo  $target/$LogDir/$memory_dir/memory_assigned$extension 2>>$errorlog
-	logFooter $target/$LogDir/$logfile "free" $target/$LogDir/$memory_dir
+	logFooter $target/$LogDir/$logfile " " $target/$LogDir/$memory_dir
 fi 
 
 if [ -f /proc/iomem ]; then 
 	logHeader $target/$LogDir/$logfile "memory : iomem"
 	cp /proc/iomem  $target/$LogDir/$memory_dir/io_memory_address$extension 2>>$errorlog
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$memory_dir
+	logFooter $target/$LogDir/$logfile " " $target/$LogDir/$memory_dir
 fi
 
 if [ -f /proc/vmalloc ]; then 
@@ -493,14 +498,14 @@ echo "- Modules section begins" >> $target/$LogDir/$logfile
 
 if [ -x "$(command -v lsmod)" ]; then 
 	logHeader $target/$LogDir/$logfile "modules : lsmod"
-	lsmod | column -t > $target/$LogDir/$modules_dir/lsmod_modules$extension
-	logFooter $target/$LogDir/$logfile "lsmod" $target/$LogDir/$modules_dir
+	lsmod | column --table > $target/$LogDir/$modules_dir/lsmod_modules$extension
+	logFooter $target/$LogDir/$logfile " " $target/$LogDir/$modules_dir
 fi
 
 if [ -f /proc/modules ]; then 
 	logHeader $target/$LogDir/$logfile "modules : modules list"
-	cat /proc/modules | column -t > $target/$LogDir/$modules_dir/modules$extension
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$modules_dir
+	cat /proc/modules | column --table > $target/$LogDir/$modules_dir/modules$extension
+	logFooter $target/$LogDir/$logfile " " $target/$LogDir/$modules_dir
 fi
 
 logFileStubbSection $target/$LogDir/$logfile $target/$LogDir/$modules_dir "- modules section ends " $modules_dir
@@ -527,7 +532,7 @@ if [ -f /sys/power/state ]; then
 fi 
 
 
-if [ -x "$(command -v dmesg)" ]; then 
+if [ -x "$(command -v cpupower)" ]; then 
 	logHeader $target/$LogDir/$logfile "-PM: CPUPower info commands"
 	cpupower frequency-info >> $target/$LogDir/$power_dir/cpupower-frequency_info$extension 2>> $errorlog
 	cpupower idle-info >>  $target/$LogDir/$power_dir/cpupower-idle_info$extension 2>> $errorlog
@@ -549,8 +554,8 @@ fi
 
 if [ -x "$(command -v ifconfig)" ]; then 
 	logHeader $target/$LogDir/$logfile "network : ifconfig "
-	ifconfig  > $target/$LogDir/$net_dir/ifconfig$extension
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$net_dir
+	ifconfig  -a -v > $target/$LogDir/$net_dir/ifconfig$extension
+	logFooter $target/$LogDir/$logfile " " $target/$LogDir/$net_dir
 fi 
 
 if [ -x "$(command -v ip)" ]; then 
@@ -567,7 +572,7 @@ fi
 
 if [ -x "$(command -v route)" ]; then 
 	logHeader $target/$LogDir/$logfile "network : routes"
-	route > $target/$LogDir/$net_dir/route.txt
+	route --verbose --extend  > $target/$LogDir/$net_dir/route$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$net_dir
 fi
 
@@ -602,12 +607,13 @@ fi
 
 if [ -x "$(command -v dmesg)" ]; then 
 	logHeader $target/$LogDir/$logfile "system : dmesg"
-	dmesg --level=warn > $target/$LogDir/$os_dir/dmesg-warnings$extension
-	dmesg --level=err > $target/$LogDir/$os_dir/dmesg-errors$extension
-	dmesg --level=crit > $target/$LogDir/$os_dir/dmesg-critical$extension
+	dmesg --decode --human --kernel --level=warn > $target/$LogDir/$os_dir/dmesg-warnings$extension
+	dmesg --decode --human --kernel --level=err > $target/$LogDir/$os_dir/dmesg-errors$extension
+	dmesg --decode --human --kernel --level=crit > $target/$LogDir/$os_dir/dmesg-critical$extension
 	dmesg --level=debug > $target/$LogDir/$os_dir/dmesg-debug$extension
 	dmesg > $target/$LogDir/$os_dir/dmesg$extension
 	dmesg --human > $target/$LogDir/$os_dir/dmesg_friendly$extension
+	dmesg --decode --human --kernel > $target/$LogDir/$os_dir/dmesg_extra$extension
 	cp /var/run/dmesg.boot $target/$LogDir/$os_dir/ 2>> $errorlog
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$os_dir
 fi
@@ -644,7 +650,7 @@ lsmod | sed 's/ .*//g' | sort | sed '/Module/d' >> $target/$LogDir/$os_dir/modul
 cat $target/$LogDir/$os_dir/module.txt | while read line
 do
 	modinfo $line | grep -w "version:" >> $target/$LogDir/$os_dir/version.txt
-	VERSION=$LogDir/$os_dir/version.txt
+	VERSION=$target/$LogDir/$os_dir/version.txt
 	if [[ -s $VERSION ]]; then
 		modinfo $line >> $target/$LogDir/$os_dir/all_driver_info.txt
 		modinfo $line | grep -e "description:"  >> $target/$LogDir/$os_dir/drivers.txt
@@ -682,7 +688,7 @@ logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$os_dir
 
 if [ -x "$(command -v /bin/bash)" ]; then 
 	logHeader $target/$LogDir/$logfile "system : command history"
-	history >> $target/$LogDir/$os_dir/history$extension 2>> $errorlog
+	history >>  $target/$LogDir/$os_dir/history_cmd$extension 
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$os_dir
 fi
 
@@ -704,6 +710,13 @@ if [ -f /proc/fb ]; then
 	cp /proc/fb  $target/$LogDir/$os_dir/fb$extension 2>> $errorlog
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$os_dir
 fi
+
+if [ -x "$(command -v env)" ]; then 
+	logHeader $target/$LogDir/$logfile "Enviroment"
+	env > $target/$LogDir/$os_dir/enviroment$extension 2>> $errorlog
+	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$os_dir
+fi
+
 logFileStubbSection $target/$LogDir/$logfile $target/$LogDir/$os_dir/ "- OS Enviroment logs ends" $os_dir
 
 logHeader $target/$LogDir/$logfile "Misc : other logs"
