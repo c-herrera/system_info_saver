@@ -29,12 +29,15 @@ extension=.txt
 currenthost=$(cat /etc/hostname)
 LogDir=sut_info_$(date +%Y_%m_%d_%H_%M_%S)
 logfile=summary.txt
-version="0.1.21"
-mainfolder=$HOME/evidence
+version="0.1.22"
+mainfolder=./evidence
 platformfolder=sys_info
 target=$mainfolder/$platformfolder
 errorlog=$target/$LogDir/errors.txt
 htmllog=$target/$LogDir/log_summary.html
+
+
+
 
 #script folders
 hw_dir=hw
@@ -51,16 +54,6 @@ modules_dir=modules
 function pause(){
 	echo "Press the Enter key to continue..."
 	read -p "$*"
-}
-
-# Prototype 1 command 2 arguments (opt) 3 path to save 4 log filename
-function RunCmdandLog() {
-	if [ -n "$(command -v $1)" ]; then
-		echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $1 ] "
-		echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $1 ] " >> $3/$4
-		$1 $2 >> $3/$4
-		echo "- [ $(date +%Y:%m:%d:%H:%M:%S) $1 ] " >> $3/$4
-	fi
 }
 
 function logHTMLHeader() {
@@ -150,7 +143,10 @@ function OS_detect() {
 		;;
 		"SUSE" )
 		distrovar=SUSE
-		;;	
+		;;
+		*)
+		distrovar=$distroshortname
+		;;
 	esac
 
 	case $(uname) in 
@@ -159,7 +155,7 @@ function OS_detect() {
 			distrotype=RED_HAT_LIKE
 		fi
 		
-		if  [ -x "$(command -v zypper)" ]; then
+		if  [ -x "$(command -v zypper)" || -x "$(command -v zypp)" ]; then
 			distrotype=SUSE_LIKE
 		fi
 		
@@ -209,6 +205,23 @@ then
 	echo "Type : $0 with more than one argument to get this help."
 	exit 1
 fi
+
+
+function get_hw_info(){
+	echo "Hw Info"
+}
+
+function get_io_info() {
+	echo "IO specs"
+}
+
+
+function get_pci_info() {
+	echo "pci specs"
+}
+
+
+
 
 # ======================main(1) Start here :=====================================
 echo "Detecting OS ....."
@@ -292,22 +305,22 @@ fi
 
 if [ -x "$(command -v dmidecode)" ]; then 
 	logHeader $target/$LogDir/$logfile "hardware : dmidecode"
-	dmidecode > $target/$LogDir/$hw_dir/dmidecode-system-dmi-full-hw$extension
+	dmidecode > $target/$LogDir/$hw_dir/dmidecode-hw$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
 fi
 
 
 if [ -x "$(command -v lspci)" ]; then 
 	logHeader $target/$LogDir/$logfile "hardware : lspci"
-	lspci -t -vmm > $target/$LogDir/$hw_dir/lspci-pci-devices-topology-verbose$extension
-	lspci -vvvxxx > $target/$LogDir/$hw_dir/lspci-pci-devices-extra-verbose$extension
+	lspci -t -vv -nn > $target/$LogDir/$hw_dir/lspci-topology$extension
+	lspci -vv -x > $target/$LogDir/$hw_dir/lspci-verbose$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
 fi
 
 if [ -x "$(command -v lscpu)" ]; then 
 	logHeader $target/$LogDir/$logfile "hardware : lscpu"
 	lscpu > $target/$LogDir/$hw_dir/lscpu-cpu-basic$extension
-	lscpu --extended --all | column -t > $target/$LogDir/$hw_dir/lscpu-extended$extension
+	lscpu --extended --all --physical | column -t > $target/$LogDir/$hw_dir/lscpu-extended$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
 fi 
 
@@ -341,27 +354,27 @@ logFileStubbSection $target/$LogDir/$logfile $target/$LogDir/$hw_dir/ "- hardwar
 
 # Storage logs section
 echo "- Storage section begins " >> $target/$LogDir/$logfile
-if [ -f /proc/cpuinfo  ]; then 
+if [ -x "$(command -v lsblk)" ]; then 
 	logHeader $target/$LogDir/$logfile "storage : lsblk"
-	lsblk --all --ascii --perms --fs | column --table  > $target/$LogDir/$storage_dir/lsblk$extension
+	lsblk --all --ascii --perms --fs --topology | column --table  > $target/$LogDir/$storage_dir/lsblk-verbose$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
 fi 
 
 if [ -x "$(command -v lsscsi)" ]; then 
 	logHeader $target/$LogDir/$logfile "storage : lsscsi"
-	lsscsi --size --verbose | column --table > $target/$LogDir/$storage_dir/lsssci-verbose$extension
+	lsscsi --size --verbose --list --long --size  > $target/$LogDir/$storage_dir/lssci-verbose$extension
 	logFooter $target/$LogDir/$logfile "lsscsi" $target/$LogDir/$storage_dir/
 fi
 
 if [ -x "$(command -v fdisk)" ]; then 
 	logHeader $target/$LogDir/$logfile "storage : fdisk"
-	fdisk -l > $target/$LogDir/$storage_dir/fdisk$extension
+	fdisk --list > $target/$LogDir/$storage_dir/fdisk-listed$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
 fi
 
 if [ -x "$(command -v df)" ]; then 
 	logHeader $target/$LogDir/$logfile "storage : df"
-	df --human-readable > $target/$LogDir/$storage_dir/df-usage$extension
+	df --human-readable --all > $target/$LogDir/$storage_dir/df-stats$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
 fi
 
@@ -373,7 +386,7 @@ fi
 
 if [ -x "$(command -v mount)" ]; then 
 	logHeader $target/$LogDir/$logfile "storage : mount"
-	mount --verbose --show-labels | column --table > $target/$LogDir/$storage_dir/mount_cmd$extension
+	mount --verbose --show-labels | column --table > $target/$LogDir/$storage_dir/mounted_fs$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
 fi
 
@@ -404,13 +417,13 @@ fi
 
 if [ -x "$(command -v blockdev)" ]; then 
 	logHeader $target/$LogDir/$logfile "storage : blockdev"
-	blockdev --report  |  column --table >> $target/$LogDir/$storage_dir/blockdevices$extension
+	blockdev --report  |  column --table >> $target/$LogDir/$storage_dir/block_devices$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
 fi
 
 if [ -x "$(command -v swapon)" ]; then 
 	logHeader $target/$LogDir/$logfile "storage : swaps"
-	swapon --all >> $target/$LogDir/$storage_dir/swaps$extension
+	swapon --verbose --show=NAME,TYPE,SIZE,USED,PRIO,UUID,LABEL >> $target/$LogDir/$storage_dir/swapon_stats$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
 fi
 logFileStubbSection $target/$LogDir/$logfile $target/$LogDir/$storage_dir/ "- Storage section ends " $storage_dir
@@ -426,9 +439,9 @@ fi
 
 if [ -x "$(command -v lsusb)" ]; then 
 	logHeader $target/$LogDir/$logfile "io : lsusb"
-	lsusb -t > $target/$LogDir/$io_dir/lsusb_topology$extension
+	lsusb --tree > $target/$LogDir/$io_dir/lsusb_topology$extension
 	lsusb > $target/$LogDir/$io_dir/lsusb_normal$extension
-	lsusb -v > $target/$LogDir/$io_dir/lsusb_verbose$extension
+	lsusb --verbose > $target/$LogDir/$io_dir/lsusb_verbose$extension
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$io_dir
 fi
 
@@ -607,13 +620,11 @@ fi
 
 if [ -x "$(command -v dmesg)" ]; then 
 	logHeader $target/$LogDir/$logfile "system : dmesg"
-	dmesg --decode --human --kernel --level=warn > $target/$LogDir/$os_dir/dmesg-warnings$extension
-	dmesg --decode --human --kernel --level=err > $target/$LogDir/$os_dir/dmesg-errors$extension
-	dmesg --decode --human --kernel --level=crit > $target/$LogDir/$os_dir/dmesg-critical$extension
-	dmesg --level=debug > $target/$LogDir/$os_dir/dmesg-debug$extension
-	dmesg > $target/$LogDir/$os_dir/dmesg$extension
-	dmesg --human > $target/$LogDir/$os_dir/dmesg_friendly$extension
-	dmesg --decode --human --kernel > $target/$LogDir/$os_dir/dmesg_extra$extension
+	dmesg --decode --human --level=warn > $target/$LogDir/$os_dir/dmesg-level_warnings$extension
+	dmesg --decode --human --level=err > $target/$LogDir/$os_dir/dmesg-level_errors$extension
+	dmesg --decode --human --level=crit > $target/$LogDir/$os_dir/dmesg-level_critical$extension
+	dmesg --decode --human --level=debug > $target/$LogDir/$os_dir/dmesg-level_debug$extension
+	dmesg --decode --human > $target/$LogDir/$os_dir/dmesg$extension
 	cp /var/run/dmesg.boot $target/$LogDir/$os_dir/ 2>> $errorlog
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$os_dir
 fi
