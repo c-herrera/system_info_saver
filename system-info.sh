@@ -5,7 +5,7 @@
 #                 it a single location where user can pick and seek for whatever
 #                 is required
 # Version       : 0.1.21
-# Date          : 2018-11-18-21:18
+# Date          : 2019-10-06-23:39
 # Created by    : Carlos Herrera.
 # Notes         : To run type sh system-info.sh in a system terminal with root access.
 #                 If modified, please contact the autor to add and check the changes
@@ -18,7 +18,7 @@ set +x
 
 # Setting some vars to use :
 
-#Script related
+#Script vars related
 arch=-1
 kernel=-1
 distroname=1
@@ -36,9 +36,6 @@ target=$mainfolder/$platformfolder
 errorlog=$target/$LogDir/errors.txt
 htmllog=$target/$LogDir/log_summary.html
 
-
-
-
 #script folders
 hw_dir=hw
 os_dir=os
@@ -49,7 +46,7 @@ io_dir=io
 memory_dir=memory
 modules_dir=modules
 
-
+# --------------------- snippets and whatnots -----------------------------------
 #Pause function
 function pause(){
 	echo "Press the Enter key to continue..."
@@ -155,7 +152,7 @@ function OS_detect() {
 			distrotype=RED_HAT_LIKE
 		fi
 		
-		if  [ -x "$(command -v zypper)" || -x "$(command -v zypp)" ]; then
+		if  [ -x "$(command -v zypper)" ]; then
 			distrotype=SUSE_LIKE
 		fi
 		
@@ -174,6 +171,46 @@ function OS_detect() {
 	esac
 }
 
+function script_setup () {
+	echo "Creating directory for logs"
+	# Make our new logging directory
+	if  [ -d "$LogDir" ]
+	then
+		echo "$LogDir directory exists, will continue"
+		touch $target/$LogDir/$logfile
+		systembanner >> $target/$LogDir/$logfile
+		echo "" >> $target/$LogDir/$logfile
+		date >> $target/$LogDir/$logfile
+		# Create folder for logs
+		folderSetup
+	else
+		echo "$LogDir directory not found, creating one"
+		if [ -d "$mainfolder" ] 
+		then 
+			echo "Main folder $mainfolder exist already, moving on..."
+		else
+			echo "Main folder $mainfolder not found, creating one..."
+			mkdir $mainfolder
+		fi
+
+		if [ -d "$mainfolder/$platformfolder" ]
+		then
+			echo "Platform folder $platformfolder already exist, moving on ..."
+		else
+			echo "Platform folder $platformfolder not found, creating one..."
+			mkdir --parents $mainfolder/$platformfolder
+		fi
+		mkdir --parents $target/$LogDir
+		touch $target/$LogDir/$logfile
+		systembanner >> $target/$LogDir/$logfile
+		echo "" >> $target/$LogDir/$logfile
+		# Create folder for logs
+		date >> $target/$LogDir/$logfile
+		folderSetup
+	fi
+}
+
+
 #Main folders setup
 function folderSetup(){
 	mkdir --parents $target/$LogDir/$hw_dir
@@ -187,246 +224,235 @@ function folderSetup(){
 	mkdir --parents $target/$LogDir/$io_dir
 }
 
-
-echo "Checking for root or admin credentials"
-if [ "$EUID" -ne 0 ]
-then 
-	echo "Please run this script as root."
-	exit 
-else 
-	echo "Looks Ok, .... continue"
-fi
-
-# Setting for a future command line checkup
-if  [ $# -ne 0 ]
-then
-	echo "Tool to gather Linux OS information for testing cases or debug triage"
-	echo " Usage : $0"
-	echo "Type : $0 with more than one argument to get this help."
-	exit 1
-fi
-
-
-function get_hw_info(){
+function get_sys_info{
 	echo "Hw Info"
 }
 
-function get_io_info() {
+function get_process_info() {
 	echo "IO specs"
 }
 
 
-function get_pci_info() {
+function get_memory_info() {
 	echo "pci specs"
 }
 
+function get_network_info() {
+	echo ""
+}
+
+function get_hw_info() {
+	echo ""
+	# Hardware logs section
+	echo "- Hardware section starts :" >> $target/$LogDir/$logfile
+
+	if [ -x "$(command -v lshw)" ]; then 
+		logHeader $target/$LogDir/$logfile "hardware : lshw"
+		lshw -html  > $target/$LogDir/$hw_dir/lshw-system-info.html
+		lshw -short > $target/$LogDir/$hw_dir/lshw-system-info-brief$extension
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
+	fi
+
+	if [ -x "$(command -v hwinfo)" ]; then 
+		logHeader $target/$LogDir/$logfile "hardware : hwinfo"
+		hwinfo --all --log=$target/$LogDir/$hw_dir/hwinfo$extension
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
+	fi
+
+	if [ -x "$(command -v dmidecode)" ]; then 
+		logHeader $target/$LogDir/$logfile "hardware : dmidecode"
+		dmidecode > $target/$LogDir/$hw_dir/dmidecode-hw$extension
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
+	fi
 
 
+	if [ -x "$(command -v lspci)" ]; then 
+		logHeader $target/$LogDir/$logfile "hardware : lspci"
+		lspci -t -vv -nn > $target/$LogDir/$hw_dir/lspci-topology$extension
+		lspci -vv -x > $target/$LogDir/$hw_dir/lspci-verbose$extension
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
+	fi
+
+	if [ -x "$(command -v lscpu)" ]; then 
+		logHeader $target/$LogDir/$logfile "hardware : lscpu"
+		lscpu > $target/$LogDir/$hw_dir/lscpu-cpu-basic$extension
+		lscpu --extended --all --physical | column -t > $target/$LogDir/$hw_dir/lscpu-extended$extension
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
+	fi 
+
+	if [ -f /proc/cpuinfo  ]; then 
+		logHeader $target/$LogDir/$logfile "hardware : cpuinfo"
+		cp /proc/cpuinfo $target/$LogDir/$hw_dir/cpuinfo$extension 2>> $errorlog
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
+	fi
+
+	if [ -f /proc/schedstat ]; then 
+		logHeader $target/$LogDir/$logfile "hardware : cpu schedule"
+		cp /proc/schedstat $target/$LogDir/$hw_dir/cpu_schedule$extension 2>>$errorlog
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
+	fi
+
+
+	if [ -f /var/log/xorg.0$extension ]; then 
+		logHeader $target/$LogDir/$logfile "hardware : x-server"
+		cp /var/log/xorg.0$extension $target/$LogDir/$hw_dir/xorg$extension 2>> $errorlog
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
+	fi
+
+
+	if [ -f /proc/devices ]; then 
+		logHeader $target/$LogDir/$logfile "hardware : devices"
+		cp /proc/devices $target/$LogDir/$hw_dir/devices$extension 2>> $errorlog
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
+	fi
+	
+	if [ -x "$(command -v lsusb)" ]; then 
+		logHeader $target/$LogDir/$logfile "io : lsusb"
+		lsusb --tree > $target/$LogDir/$io_dir/lsusb_topology$extension
+		lsusb > $target/$LogDir/$io_dir/lsusb_normal$extension
+		lsusb --verbose > $target/$LogDir/$io_dir/lsusb_verbose$extension
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$io_dir
+	fi
+
+	logFileStubbSection $target/$LogDir/$logfile $target/$LogDir/$hw_dir/ "- hardware section end " $hw_dir
+
+}
+
+function get_fs_info() {
+	# Storage logs section
+	echo "- Storage section begins " >> $target/$LogDir/$logfile
+	if [ -x "$(command -v lsblk)" ]; then 
+		logHeader $target/$LogDir/$logfile "storage : lsblk"
+		lsblk --all --ascii --perms --fs --topology | column --table  > $target/$LogDir/$storage_dir/lsblk-verbose$extension
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
+	fi 
+
+	if [ -x "$(command -v lsscsi)" ]; then 
+		logHeader $target/$LogDir/$logfile "storage : lsscsi"
+		lsscsi --size --verbose --list --long --size  > $target/$LogDir/$storage_dir/lssci-verbose$extension
+		logFooter $target/$LogDir/$logfile "lsscsi" $target/$LogDir/$storage_dir/
+	fi
+
+	if [ -x "$(command -v fdisk)" ]; then 
+		logHeader $target/$LogDir/$logfile "storage : fdisk"
+		fdisk --list > $target/$LogDir/$storage_dir/fdisk-listed$extension
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
+	fi
+
+	if [ -x "$(command -v df)" ]; then 
+		logHeader $target/$LogDir/$logfile "storage : df"
+		df --human-readable --all > $target/$LogDir/$storage_dir/df-stats$extension
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
+	fi
+
+	if [ -f /proc/partitions  ];then 
+		logHeader $target/$LogDir/$logfile "storage : partition file"
+		cp /proc/partitions $target/$LogDir/$storage_dir/partitions$extension 2>> $errorlog
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
+	fi
+
+	if [ -x "$(command -v mount)" ]; then 
+		logHeader $target/$LogDir/$logfile "storage : mount"
+		mount --verbose --show-labels | column --table > $target/$LogDir/$storage_dir/mounted_fs$extension
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
+	fi
+
+	if [ -f /proc/scsi  ]; then 
+		logHeader $target/$LogDir/$logfile "storage : scsi"
+		cp /proc/scsi/scsi $target/$LogDir/$storage_dir/scsi_devices$extension 2>>$errorlog
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
+	fi
+
+	if [ -f /proc/scsi/mounts ]; then 
+		logHeader $target/$LogDir/$logfile "storage : scsi-mounts"
+		cp /proc/scsi/mounts  $target/$LogDir/$storage_dir/scsi-mounts$extension 2>>$errorlog
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
+	fi
+
+	if [ -f /proc/diskstats ]; then 
+		logHeader $target/$LogDir/$logfile "storage : diskstats"
+		cat /proc/diskstats | column --table >> $target/$LogDir/$storage_dir/diskstats$extension
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
+	fi
+
+	if [ -f /proc/filesystems ]; then 
+		logHeader $target/$LogDir/$logfile "storage : filesystems"
+		cp /proc/filesystems  $target/$LogDir/$storage_dir/fs_systems$extension 2>>$errorlog
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
+	fi
+
+
+	if [ -x "$(command -v blockdev)" ]; then 
+		logHeader $target/$LogDir/$logfile "storage : blockdev"
+		blockdev --report  |  column --table >> $target/$LogDir/$storage_dir/block_devices$extension
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
+	fi
+
+	if [ -x "$(command -v swapon)" ]; then 
+		logHeader $target/$LogDir/$logfile "storage : swaps"
+		swapon --verbose --show=NAME,TYPE,SIZE,USED,PRIO,UUID,LABEL >> $target/$LogDir/$storage_dir/swapon_stats$extension
+		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
+	fi
+	logFileStubbSection $target/$LogDir/$logfile $target/$LogDir/$storage_dir/ "- Storage section ends " $storage_dir
+}
+
+function tool_usage () {
+	echo "Tool to gather Linux OS information for testing cases or debug/triage"
+	echo " Usage : $0"
+	echo "Type : $0 with more than one argument to get this help."
+	exit 1
+}
+
+function check_admin() {
+	echo "Checking for root or admin credentials"
+	if [ "$EUID" -ne 0 ]
+	then 
+		echo "Please run this script as root."
+		exit 
+	else 
+		echo "Looks Ok, .... continue"
+	fi
+}
+
+function check_binaries () {
+	echo "Check for bin directory ...."
+	# Checking this does not hurt
+	if [ -d  "/bin" ]
+	then 
+		echo "main directory BIN is present continue ..." >> $target/$LogDir/$logfile
+		echo "Seems ok, continue ...."
+	else
+		echo "BIN directory is not present at // bailing out..." >> $target/$LogDir/$errorlog
+		exit 1
+	fi
+}
 
 # ======================main(1) Start here :=====================================
+# Setting for a future command line checkup
+if  [ $# -ne 0 ]
+then
+	tool_usage 
+fi
+check_binaries
+check_admin
+
 echo "Detecting OS ....."
 #Linux distro detection
 OS_detect
-echo "Creating directory for logs"
-# Make our new logging directory
-if  [ -d "$LogDir" ]
-then
-	echo "$LogDir directory exists, will continue"
-	touch $target/$LogDir/$logfile
-	systembanner >> $target/$LogDir/$logfile
-	echo "" >> $target/$LogDir/$logfile
-	date >> $target/$LogDir/$logfile
-	# Create folder for logs
-	folderSetup
-else
-	echo "$LogDir directory not found, creating one"
-	if [ -d "$mainfolder" ] 
-	then 
-		echo "Main folder $mainfolder exist already, moving on..."
-	else
-		echo "Main folder $mainfolder not found, creating one..."
-		mkdir $mainfolder
-	fi
-
-	if [ -d "$mainfolder/$platformfolder" ]
-	then
-		echo "Platform folder $platformfolder already exist, moving on ..."
-	else
-		echo "Platform folder $platformfolder not found, creating one..."
-		mkdir --parents $mainfolder/$platformfolder
-	fi
-	mkdir --parents $target/$LogDir
-	touch $target/$LogDir/$logfile
-	systembanner >> $target/$LogDir/$logfile
-	echo "" >> $target/$LogDir/$logfile
-	# Create folder for logs
-	date >> $target/$LogDir/$logfile
-	folderSetup
-fi
-echo "Check for bin directory ...."
-# Checking this does not hurt
-if [ -d  "/bin" ]
-then 
-	echo "main directory BIN is present continue ..." >> $target/$LogDir/$logfile
-	echo "Seems ok, continue ...."
-else
-	echo "BIN directory is not present at // bailing out..." >> $target/$LogDir/$errorlog
-	exit 1
-fi
+# setting folders and files ...
+script_setup
 
 pause
 # Get rid of all the term clutter
 clear
-
 # A nice introduction ....
 systembanner
-
 # Annnnd proceed with the script ...`
 echo "- Starting the recolletion " >> $target/$LogDir/$logfile
 echo "- Process started at $(date +%Y:%m:%d:%H:%M:%S) " >> $target/$LogDir/$logfile
 
 logHTMLHeader
 
-# Hardware logs section
-echo "- Hardware section starts :" >> $target/$LogDir/$logfile
-
-if [ -x "$(command -v lshw)" ]; then 
-	logHeader $target/$LogDir/$logfile "hardware : lshw"
-	lshw -html  > $target/$LogDir/$hw_dir/lshw-system-info.html
-	lshw -short > $target/$LogDir/$hw_dir/lshw-system-info-brief$extension
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
-fi
-
-if [ -x "$(command -v hwinfo)" ]; then 
-	logHeader $target/$LogDir/$logfile "hardware : hwinfo"
-	hwinfo --all --log=$target/$LogDir/$hw_dir/hwinfo$extension
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
-fi
-
-if [ -x "$(command -v dmidecode)" ]; then 
-	logHeader $target/$LogDir/$logfile "hardware : dmidecode"
-	dmidecode > $target/$LogDir/$hw_dir/dmidecode-hw$extension
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
-fi
-
-
-if [ -x "$(command -v lspci)" ]; then 
-	logHeader $target/$LogDir/$logfile "hardware : lspci"
-	lspci -t -vv -nn > $target/$LogDir/$hw_dir/lspci-topology$extension
-	lspci -vv -x > $target/$LogDir/$hw_dir/lspci-verbose$extension
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
-fi
-
-if [ -x "$(command -v lscpu)" ]; then 
-	logHeader $target/$LogDir/$logfile "hardware : lscpu"
-	lscpu > $target/$LogDir/$hw_dir/lscpu-cpu-basic$extension
-	lscpu --extended --all --physical | column -t > $target/$LogDir/$hw_dir/lscpu-extended$extension
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
-fi 
-
-if [ -f /proc/cpuinfo  ]; then 
-	logHeader $target/$LogDir/$logfile "hardware : cpuinfo"
-	cp /proc/cpuinfo $target/$LogDir/$hw_dir/cpuinfo$extension 2>> $errorlog
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
-fi
-
-if [ -f /proc/schedstat ]; then 
-	logHeader $target/$LogDir/$logfile "hardware : cpu schedule"
-	cp /proc/schedstat $target/$LogDir/$hw_dir/cpu_schedule$extension 2>>$errorlog
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
-fi
-
-
-if [ -f /var/log/xorg.0$extension ]; then 
-	logHeader $target/$LogDir/$logfile "hardware : x-server"
-	cp /var/log/xorg.0$extension $target/$LogDir/$hw_dir/xorg$extension 2>> $errorlog
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
-fi
-
-
-if [ -f /proc/devices ]; then 
-	logHeader $target/$LogDir/$logfile "hardware : devices"
-	cp /proc/devices $target/$LogDir/$hw_dir/devices$extension 2>> $errorlog
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$hw_dir/
-fi
-
-logFileStubbSection $target/$LogDir/$logfile $target/$LogDir/$hw_dir/ "- hardware section end " $hw_dir
-
-# Storage logs section
-echo "- Storage section begins " >> $target/$LogDir/$logfile
-if [ -x "$(command -v lsblk)" ]; then 
-	logHeader $target/$LogDir/$logfile "storage : lsblk"
-	lsblk --all --ascii --perms --fs --topology | column --table  > $target/$LogDir/$storage_dir/lsblk-verbose$extension
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
-fi 
-
-if [ -x "$(command -v lsscsi)" ]; then 
-	logHeader $target/$LogDir/$logfile "storage : lsscsi"
-	lsscsi --size --verbose --list --long --size  > $target/$LogDir/$storage_dir/lssci-verbose$extension
-	logFooter $target/$LogDir/$logfile "lsscsi" $target/$LogDir/$storage_dir/
-fi
-
-if [ -x "$(command -v fdisk)" ]; then 
-	logHeader $target/$LogDir/$logfile "storage : fdisk"
-	fdisk --list > $target/$LogDir/$storage_dir/fdisk-listed$extension
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
-fi
-
-if [ -x "$(command -v df)" ]; then 
-	logHeader $target/$LogDir/$logfile "storage : df"
-	df --human-readable --all > $target/$LogDir/$storage_dir/df-stats$extension
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
-fi
-
-if [ -f /proc/partitions  ];then 
-	logHeader $target/$LogDir/$logfile "storage : partition file"
-	cp /proc/partitions $target/$LogDir/$storage_dir/partitions$extension 2>> $errorlog
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
-fi
-
-if [ -x "$(command -v mount)" ]; then 
-	logHeader $target/$LogDir/$logfile "storage : mount"
-	mount --verbose --show-labels | column --table > $target/$LogDir/$storage_dir/mounted_fs$extension
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
-fi
-
-if [ -f /proc/scsi  ]; then 
-	logHeader $target/$LogDir/$logfile "storage : scsi"
-	cp /proc/scsi/scsi $target/$LogDir/$storage_dir/scsi_devices$extension 2>>$errorlog
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
-fi
-
-if [ -f /proc/scsi/mounts ]; then 
-	logHeader $target/$LogDir/$logfile "storage : scsi-mounts"
-	cp /proc/scsi/mounts  $target/$LogDir/$storage_dir/scsi-mounts$extension 2>>$errorlog
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
-fi
-
-if [ -f /proc/diskstats ]; then 
-	logHeader $target/$LogDir/$logfile "storage : diskstats"
-	cat /proc/diskstats | column --table >> $target/$LogDir/$storage_dir/diskstats$extension
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
-fi
-
-if [ -f /proc/filesystems ]; then 
-	logHeader $target/$LogDir/$logfile "storage : filesystems"
-	cp /proc/filesystems  $target/$LogDir/$storage_dir/fs_systems$extension 2>>$errorlog
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
-fi
-
-
-if [ -x "$(command -v blockdev)" ]; then 
-	logHeader $target/$LogDir/$logfile "storage : blockdev"
-	blockdev --report  |  column --table >> $target/$LogDir/$storage_dir/block_devices$extension
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
-fi
-
-if [ -x "$(command -v swapon)" ]; then 
-	logHeader $target/$LogDir/$logfile "storage : swaps"
-	swapon --verbose --show=NAME,TYPE,SIZE,USED,PRIO,UUID,LABEL >> $target/$LogDir/$storage_dir/swapon_stats$extension
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$storage_dir/
-fi
-logFileStubbSection $target/$LogDir/$logfile $target/$LogDir/$storage_dir/ "- Storage section ends " $storage_dir
 
 #IO section
 echo "- IO section begins " >> $target/$LogDir/$logfile
@@ -436,14 +462,6 @@ if [ -f /proc/ioports ]; then
 	cp /proc/ioports  $target/$LogDir/$io_dir/io_ports$extension 2>>$errorlog
 	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$io_dir
 fi 
-
-if [ -x "$(command -v lsusb)" ]; then 
-	logHeader $target/$LogDir/$logfile "io : lsusb"
-	lsusb --tree > $target/$LogDir/$io_dir/lsusb_topology$extension
-	lsusb > $target/$LogDir/$io_dir/lsusb_normal$extension
-	lsusb --verbose > $target/$LogDir/$io_dir/lsusb_verbose$extension
-	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$io_dir
-fi
 
 if [ -f /proc/softirqs ]; then 
 	logHeader $target/$LogDir/$logfile "io : softirqs"
