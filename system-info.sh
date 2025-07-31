@@ -4,8 +4,8 @@
 # Description   : Script will try to get as much system data as posible and save
 #                 it a single location where user can pick and seek for whatever
 #                 is required
-# Version       : 0.1.32
-# Date          : 2019-10-06-23:39
+# Version       : 0.2.01
+# Date          : 2022-02-06
 # Created by    : Carlos Herrera.
 # Notes         : To run type sh system-info.sh in a system terminal with root access.
 #                 If modified, please contact the autor to add and check the changes
@@ -14,7 +14,7 @@
 
 # Fun times on errors!
 set +x
-# set otherwise on for fun !!!
+# set otherwise on for more fun !!!
 
 # Setting some vars to use :
 arch=-1
@@ -25,7 +25,7 @@ distrovar=1
 distrotype=1
 extension=.txt
 currenthost=$(cat /etc/hostname)
-LogDir=sut_info_$(date +%Y_%m_%d_%H_%M_%S)
+LogDir=system_info_snapshot$(date +%Y_%m_%d_%H_%M_%S)
 logfile=summary.txt
 version="0.1.32"
 mainfolder=./evidence
@@ -34,7 +34,7 @@ target=$mainfolder/$platformfolder
 errorlog=$target/$LogDir/errors.txt
 htmllog=$target/$LogDir/log_summary.html
 
-#script folders
+#scategory folders
 hw_dir=hw
 os_dir=os
 net_dir=net
@@ -78,6 +78,7 @@ function logFooter() {
 
 function runCmd_and_Log_it ()
 {
+# if test -f "$filename";
 	progrm=$1
 	arguments=$2
 	logfilepath=$3
@@ -111,9 +112,6 @@ function findLog_and_Save_it ()
 		echo "$syslogfilepath is not found" >> $errorlog
 	fi	
 }
-
-
-
 
 
 # $1 text log, $2 target dir, # $3 text, $4 target dir
@@ -281,12 +279,6 @@ function get_sys_info(){
 	findLog_and_Save_it '/proc/crypto' $target/$LogDir/$os_dir/linux_os_crypto$extension $errorlog	
 	runCmd_and_Log_it 'systemctl' 'list-unit-files' $target/$LogDir/$os_dir/system_units$extension $errorlog
 	
-	#if [ -d "/etc/modprobe.d" ]; then 
-	#	logHeader $target/$LogDir/$logfile "system : modprob cfg"
-	#	cp -R /etc/modprobe.d* $target/$LogDir/$os_dir/etc/ 2>> $errorlog
-	#	logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$os_dir
-	#fi
-	
 	runCmd_and_Log_it 'lsmod' '| column --table' $target/$LogDir/$os_dir/lsmod_modules$extension $errorlog
 	
 	findLog_and_Save_it '/proc/modules' $target/$LogDir/$os_dir/modules_file$extension $errorlog
@@ -325,9 +317,7 @@ function get_sys_info(){
 	
 	runCmd_and_Log_it 'history' ' ' $target/$LogDir/$os_dir/history_cmd$extension  $errorlog
 	findLog_and_Save_it '/proc/stat' $target/$LogDir/$os_dir/sys_stats$extension $errorlog
-	findLog_and_Save_it '/proc/fb' $target/$LogDir/$os_dir/fb$extension $errorlog
-	findLog_and_Save_it '/proc/fb' $target/$LogDir/$os_dir/fb$extension $errorlog
-	
+	findLog_and_Save_it '/proc/fb' $target/$LogDir/$os_dir/frame_buffer__fb$extension $errorlog
 	runCmd_and_Log_it 'env' ' ' $target/$LogDir/$os_dir/enviroment$extension  $errorlog
 }
 
@@ -335,24 +325,13 @@ function get_sys_info(){
 function get_power_info() {
 	#Power Mngt Section
 	echo "- PowerMngt section begins" >> $target/$LogDir/$logfile
-	if [ -d /sys/devices/system/cpu ]; then 
-		logHeader $target/$LogDir/$logfile "-PM: PowerDriver state"
-		echo "CPU idle current driver :" > $target/$LogDir/$power_dir/pwr-cstates-driver$extension
-		cat /sys/devices/system/cpu/cpuidle/current_driver >> $target/$LogDir/$power_dir/pwr-cstates-driver$extension 2>> $errorlog
-		echo "CPU Scaling driver :" >> $target/$LogDir/$power_dir/pwr-cstates-driver$extension
-		cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver >> $target/$LogDir/$power_dir/pwr-cstates-driver$extension 2>> $errorlog
-		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$power_dir
-	fi
+	
+	findLog_and_Save_it '/sys/devices/system/cpu/cpuidle/current_driver' $target/$LogDir/$power_dir/pwr-cstates-driver$extension $errorlog
+	findLog_and_Save_it '/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver ' $target/$LogDir/$power_dir/pwr-cstates-driver$extension $errorlog
 
-	if [ -f /sys/power/state ]; then
-		logHeader $target/$LogDir/$logfile "-PM: Sleep/Suspend stats"
-		echo "System states reported for suspend/S3" >> $target/$LogDir/$power_dir/pwr-state-found$extension
-		cp /sys/power/state  $target/$LogDir/$power_dir/pwr-state-found$extension 2>> $errorlog
-		echo "System sleep state found :" >> $target/$LogDir/$power_dir/pwr-s3-state-found$extension
-		cp /sys/power/mem_sleep  $target/$LogDir/$power_dir/pwr-s3-state-found$extension 2>> $errorlog
-		logFooter $target/$LogDir/$logfile "-" $target/$LogDir/$power_dir
-	fi 
-
+	findLog_and_Save_it '/sys/power/state' $target/$LogDir/$power_dir/pwr-state-found$extension $errorlog
+	findLog_and_Save_it '/sys/power/mem_sleep' $target/$LogDir/$power_dir/pwr-s3-state-found$extension $errorlog
+	
 	if [ -x "$(command -v cpupower)" ]; then 
 		logHeader $target/$LogDir/$logfile "-PM: CPUPower info commands"
 		cpupower frequency-info >> $target/$LogDir/$power_dir/cpupower-frequency_info$extension 2>> $errorlog
@@ -439,7 +418,6 @@ function get_memory_info() {
 		ipmctl show -topology >> $target/$LogDir/$memory_dir/dcpmm_info$extension 2>>$errorlog
 		ipmctl show -system -capabilities >> $target/$LogDir/$memory_dir/dcpmm_info$extension 2>>$errorlog
 		ipmctl show -memoryresources >> $target/$LogDir/$memory_dir/dcpmm_info$extension 2>>$errorlog
-	#	ipmctl show -d LastShutdownStatus -dimm >> $target/$LogDir/$memory_dir/dcpmm_info$extension 2>>$errorlog
 		ipmctl show -Sensor >> $target/$LogDir/$memory_dir/dcpmm_info$extension 2>>$errorlog
 		ipmctl show -d HealthState,ManageabilityState,FWVersion -dimm >> $target/$LogDir/$memory_dir/dcpmm_info$extension 2>>$errorlog
 		ipmctl show -d bootstatus -dimm  >> $target/$LogDir/$memory_dir/dcpmm_info$extension 2>>$errorlog
@@ -726,7 +704,8 @@ if  [ $# -ne 0 ]
 then
 	tool_usage 
 fi
-check_admin
+
+#check_admin
 
 echo "Detecting OS ....."
 #Linux distro detection
@@ -772,3 +751,4 @@ echo "Script is done, you may want to check the logs on ${LogDir} "
 echo "End time : " >> $target/$LogDir/$logfile
 date  >> $target/$LogDir/$logfile
 exit
+
